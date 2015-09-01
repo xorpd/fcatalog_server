@@ -1,0 +1,54 @@
+1.9.2015
+by xorpd.
+
+This project will allow saving a database of known/reversing functions, and then
+finding similarities between archived functions and functions in new IDBs.
+
+
+Main plan:
+
+
+Server:
+-------
+
+- Saves a database of all functions known:
+  For every function:
+  - sha256 hash (To identify the function 1 to 1)
+  - Catalog1 hash (To check similarities).
+  - Reverser's name.
+  - Function name (As given by the reverser).
+  - Head comment (As given by the reverser).
+
+- Handles the following request:
+  - Given a function:
+    - Search for exact sha256 match. If found, return it.
+    - Return the function with the closest Catalog1 hash (If it is close enough.
+      Don't return it if it is has a very low grade).
+
+
+Client:
+-------
+
+- Could be run from outside IDA?
+
+Main functions:
+
+- Find known: Send all functions to the server (The functions themselves).
+  - Wait for response. For each function, a tuple:
+    {reverser_name:, func_name:, head_comment, exact_match: } is sent back
+
+  - Every function for which a similarity was found will be given a name of the
+    format: SIMILAR__{grade}__name
+    The head comment will be changed to contain some more information.
+
+
+- Commit reversing.
+  - Send all the functions that were reversed (Given an important name) to the
+    server. Every function will be sent using the format:
+
+    {reverser_name:, func_name: , func_data: ,head_comment: }
+
+    - Functions that begin with SIMILAR__ will not be sent.
+    - Functions without a name will not be sent.
+
+
