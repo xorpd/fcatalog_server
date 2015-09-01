@@ -51,7 +51,7 @@ class FuncsDB:
         conn.close()
 
 
-    def add_function(self,func_data):
+    def add_function(self,func_name,func_data,head_comment):
         pass
 
     def get_similars(self,func_data,num_similars):
