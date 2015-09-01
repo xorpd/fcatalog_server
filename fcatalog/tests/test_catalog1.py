@@ -57,3 +57,37 @@ def test_sign_deterministic():
     res2 = sign(b'3kl4jfklsdjfklasjf8934j9sjdf9adfkalsdjflkasjdflkasdf',num_perms=20)
     assert res1 == res2
 
+
+###########################################
+###########################################
+
+
+def calc_sim(sgn1,sgn2):
+    """
+    Calculate the similarity between two signatures of the same size.
+    """
+    total = 0
+    assert len(sgn1) == len(sgn2)
+
+    for i in range(len(sgn1)):
+        if sgn1[i] == sgn2[i]:
+            total += 1
+
+    return total
+
+
+def test_sign_similars():
+    """
+    Sign similar strings and expect similar signatures.
+    Sign very different strings and expect zero similarity.
+    """
+    s1 = sign(b'hello world he2llo world',16)
+    s2 = sign(b'hello world he1llo world',16)
+    assert calc_sim(s1,s2) > 6
+
+    s1 = sign(b'akjdflkasjflkasjlfkasjdflkjaslkdfjaslkjfsaklfdjaslkjdfsf',16)
+    s2 = sign(b'4039582903850923850928345982309589023845823458230945',16)
+    assert calc_sim(s1,s2) == 0
+
+
+
