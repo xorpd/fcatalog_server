@@ -19,7 +19,7 @@ def ror(x,i):
     # Make sure that i is in range:
     return ((x >> i) | (x << (WORD_SIZE - i))) & MAX_WORD
 
-NUM_ITERS = 1
+NUM_ITERS = 4
 def perm(num,x):
     """
     A permutation from dwords to dwords.
