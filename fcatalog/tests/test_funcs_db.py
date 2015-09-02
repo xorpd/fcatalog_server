@@ -2,6 +2,10 @@ import pytest
 import sqlite3
 
 from funcs_db import FuncsDB
+from catalog1 import sign,strong_hash
+
+# Num hashes used for testing purposes:
+NUM_HASHES = 16
 
 
 class DebugFuncsDB(FuncsDB):
@@ -18,13 +22,13 @@ class DebugFuncsDB(FuncsDB):
         return res
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def fdb_mem(request):
     """
     Create a FuncsDB instance (A new database on disk).
     """
     # Build database in memory. Should be quicker.
-    fdb = DebugFuncsDB(':memory:',16)
+    fdb = DebugFuncsDB(':memory:',NUM_HASHES)
 
     def fin():
         """Finalizer for fdb"""
@@ -59,4 +63,26 @@ def test_add_function(fdb_mem):
     fdb_mem.add_function('func_name3',b'func_data2','func_comment3')
     assert fdb_mem.count() == 2
 
+
+def test_get_similars_basic(fdb_mem):
+    """
+    Try to run get_similars and see if it doesn't crash.
+    """
+    res = fdb_mem.get_similars(b'adfasdfasdf',5)
+    assert isinstance(res,list)
+
+    fdb_mem.add_function('func_name',b'func_data','func_comment')
+    res = fdb_mem.get_similars(b'func_data',num_similars=3)
+    assert len(res) == 1
+
+    fdb_mem.add_function('func_name2',b'func_data2','func_comment2')
+    res = fdb_mem.get_similars(b'func_data2',num_similars=3)
+    assert len(res) == 2
+
+    assert res[0].func_hash == strong_hash(b'func_data2')
+    assert res[1].func_hash != strong_hash(b'func_data2')
+
+    print(res[0].func_sig)
+    print(sign(b'func_data2',NUM_HASHES))
+    assert res[0].func_sig == sign(b'func_data2',NUM_HASHES)
 
