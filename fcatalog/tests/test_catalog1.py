@@ -1,5 +1,5 @@
 
-from catalog1 import sign
+from catalog1 import sign,strong_hash
 
 def isdword(x):
     """
@@ -90,4 +90,25 @@ def test_sign_similars():
     assert calc_sim(s1,s2) == 0
 
 
+############################################
+############################################
 
+def test_basic_strong_hash():
+    """
+    Make sure that strong_hash function works.
+    """
+    # Basic invocation:
+    res = strong_hash(b'adfklasjdflkajsdflkajsdf')
+    assert isinstance(res,bytes)
+
+    # Consistency:
+    res1 = strong_hash(b'34908523904kf9034fk9032kf903f4k')
+    res2 = strong_hash(b'34908523904kf9034fk9032kf903f4k')
+    assert res1 == res2
+
+    # Different results for different input:
+    res1 = strong_hash(b'34908523904kf9034fk9032kf903f4ka')
+    res2 = strong_hash(b'34908523904kf9034fk9032kf903f4kb')
+    assert res1 != res2
+    # But length is always the same:
+    assert len(res1) == len(res2)
