@@ -171,4 +171,3 @@ class FuncsDB:
 
         return res_list
 
-
