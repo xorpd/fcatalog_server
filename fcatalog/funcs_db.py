@@ -8,7 +8,7 @@ class FuncsDBError(Exception):
     pass
 
 
-collections.namedtuple('DBSimilar',\
+DBSimilar = collections.namedtuple('DBSimilar',\
         ['func_hash','func_name','func_comment','func_sig'])
 
 
@@ -70,7 +70,6 @@ class FuncsDB:
         cmd_tbl += ');'
 
         # Create the funcs table:
-        print(cmd_tbl)
         c.execute(cmd_tbl)
 
         # Add index for each of the 'c{num}' columns:
@@ -121,33 +120,55 @@ class FuncsDB:
         s = sign(func_data,self._num_hashes)
         func_hash = strong_hash(func_data)
 
-        # Search first for an exact match (Using strong hash):
         c = self._conn.cursor()
-        sel_hash = 'SELECT * FROM funcs WHERE func_hash=?'
-        c.execute(sel_hash,[func_hash])
-        res = c.fetchall()
-        # We expect 0 or 1 results.
-        if len(res) > 0:
-            # Append the result to res_list:
-            res_hash,res_name,res_comment = res[:3]
-            res_sig = res[3:]
-            sres = DBSimilar(func_hash=res_hash,func_comment=res_comment,\
-                    func_sig=res_sig)
-            res_list.append(sres)
-
 
         # Get all potential candidates for similarity:
-        lselects = ['(SELECT * FROM funcs WHERE c' + str(i+1) + '=?)' \
+        lselects = ['SELECT * FROM funcs WHERE c' + str(i+1) + '=?' \
                 for i in range(self._num_hashes)]
-        lselects.append('(SELECT * FROM funcs WHERE func_hash=?)')
-        selects = " UNION ".join(selects)
+        # Also search for exact match (Using strong hash):
+        sel_hash = 'SELECT * FROM funcs WHERE func_hash=?'
+        lselects.append(sel_hash)
+        selects = "\nUNION\n".join(lselects)
 
+        # Find best matching rows
+        matching = 'SELECT func_hash,func_name,func_comment,'
 
+        sig_vals = ",".join(['c' + str(i+1) for i in range(self._num_hashes)])
+        matching += sig_vals
 
-        
+        # Make an expression (c1=sig[0]) + (c2=sig[1]) + ...
+        # Which will be the grade of every row (The amount of matches of the
+        # signature).
+        sig_sum = ' + '.join(\
+                ['(c' + str(i+1) + '=?)' for i in range(self._num_hashes)])
+        matching += ',(' + sig_sum + ') AS grade '
 
+        matching += 'FROM (' + selects + ') '
 
-        
+        # Find the num_similars rows with highest grade:
+        matching += 'ORDER BY grade DESC LIMIT ?'
 
-        pass
+        c.execute(matching,s + s + [func_hash,num_similars])
+
+        for res in c.fetchall():
+            res_hash,res_name,res_comment = res[:3]
+            # We don't want to include the last superficial column grade, this
+            # is why we have -1 here:
+            res_sig = list(res[3:-1])
+            sres = DBSimilar(\
+                    func_hash=res_hash,\
+                    func_name=res_name,\
+                    func_comment=res_comment,\
+                    func_sig=res_sig)
+
+            # If we have exact match (Using strong hash), we move the result to
+            # the beginning of res_list. Otherwise, we just append to the end.
+            # The exact match will always be at the beginning.
+            if res_hash == func_hash:
+                res_list.insert(0,sres)
+            else:
+                res_list.append(sres)
+
+        return res_list
+
 
