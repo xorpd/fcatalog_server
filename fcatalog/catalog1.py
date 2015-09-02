@@ -74,3 +74,17 @@ def sign(data,num_perms):
         res_sign.append(cur_sign)
 
     return res_sign
+
+
+########################################
+########################################
+
+import hashlib
+
+def strong_hash(data):
+    """
+    Perform strong cryptographic hash.
+    """
+    m = hashlib.sha256()
+    m.update(data)
+    return m.digest()
