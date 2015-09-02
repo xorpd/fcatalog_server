@@ -17,10 +17,9 @@ def ror(x,i):
     x is a dword
     """
     # Make sure that i is in range:
-    assert (0 <= i) and (i <= 31)
     return ((x >> i) | (x << (WORD_SIZE - i))) & MAX_WORD
 
-NUM_ITERS = 8
+NUM_ITERS = 1
 def perm(num,x):
     """
     A permutation from dwords to dwords.
@@ -48,12 +47,7 @@ def bytes_to_num(data):
     """
     Convert a string to a number
     """
-    total = 0
-    for c in data:
-        total <<= BYTE_SIZE
-        total += c
-
-    return total
+    return int.from_bytes(bytes=data,byteorder='big')
 
 
 def sign(data,num_perms):
