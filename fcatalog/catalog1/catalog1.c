@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #define WORD_SIZE 32      	// 32 bits
 #define MAX_WORD 0xffffffff     // Maximum size of a dword.
 #define BYTE_SIZE 8             // Amount of bits in a byte.
@@ -72,7 +70,7 @@ int sign(
             y <<= 8;
             y += data[i];
             py = perm(permi,y);
-            if(min_py < py) {
+            if(min_py > py) {
                 min_py = py;
             }
         }
