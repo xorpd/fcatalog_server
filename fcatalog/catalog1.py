@@ -116,7 +116,6 @@ class Catalog1Sign:
         arr_perms = ctypes.c_uint32 * num_perms
         # Initialize array for return value:
         s = arr_perms()
-        print('len(data) =',len(data))
         res = self._csign(data,len(data),s,num_perms)
 
         if res != 0:
