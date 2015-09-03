@@ -211,6 +211,7 @@ class TestGetSimilars(unittest.TestCase):
         # surprising.
         assert len(sims) == 0
 
+
     def test_match_special_func(self):
         """
         Try to find similarity for the special function. We expect to find it.
