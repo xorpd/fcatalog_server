@@ -69,4 +69,5 @@ bin:
 bin/test_catalog1: test_catalog1.c bin/libcatalog1.so | bin
 	$(CC) $< -o $@ -Lbin -lcatalog1 $(CFLAGS)
  
-.PHONY: test_catalog1 libcatalog1 clean uninstall install all
+# .PHONY: test_catalog1 libcatalog1 clean uninstall install all
+.PHONY: test_catalog1 libcatalog1 clean all
