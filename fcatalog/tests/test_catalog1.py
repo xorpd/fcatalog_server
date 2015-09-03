@@ -1,5 +1,5 @@
 
-from catalog1 import sign,strong_hash
+from catalog1 import slow_sign,sign,strong_hash
 
 def isdword(x):
     """
@@ -112,3 +112,21 @@ def test_basic_strong_hash():
     assert res1 != res2
     # But length is always the same:
     assert len(res1) == len(res2)
+
+##############################################
+##############################################
+
+def test_slow_matches_fast():
+    """
+    Make sure that the two implementations of catalog1 (The python and the C
+    one) match.
+    """
+    data = b'12345'
+    s1 = slow_sign(data,16)
+    s2 = sign(data,16)
+    assert s1 == s2
+
+
+
+
+
