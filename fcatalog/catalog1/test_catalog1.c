@@ -39,6 +39,28 @@ int test_simple_sign() {
     return 0;
 }
 
+int test_short_input() {
+    // Try to sign a short input, and expect a return value of -1.
+    
+    unsigned int result[NUM_PERMS];
+    char* short_data = "123";
+    char* exact_data = "1234";
+    int res;
+
+    printf("\n* Testing signing of short data:\n");
+    res = sign(short_data,strlen(short_data),result,NUM_PERMS);
+    if (res != -1) {
+        printf("\n sign() didn't report that input was too short.\n");
+        return -1;
+    }
+    res = sign(exact_data,strlen(exact_data),result,NUM_PERMS);
+    if (res != 0) {
+        printf("\n sign() reported incorrectly that input was too short.\n");
+        return -1;
+    }
+    return 0;
+}
+
 int test_sign_similarity() {
     // Check the similarity properties of the sign function.
     unsigned int result[NUM_PERMS];
@@ -87,6 +109,7 @@ int main() {
     int res = 0;
 
     res |= test_simple_sign();
+    res |= test_short_input();
     res |= test_sign_similarity();
 
     if(0 == res) {
