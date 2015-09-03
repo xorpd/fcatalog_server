@@ -1,6 +1,8 @@
 # The catalog1 sensitive hashing algorithm.
 # By xorpd.
 
+class Catalog1Error(Exception): pass
+
 WORD_SIZE = 32      # 32 bits.
 MAX_WORD = (1 << WORD_SIZE) - 1
 
@@ -50,14 +52,16 @@ def bytes_to_num(data):
     return int.from_bytes(bytes=data,byteorder='big')
 
 
-def sign(data,num_perms):
+def slow_sign(data,num_perms):
     """
     Sign over data.
     Use num_perms permutations. (The more you have, the more sensitive is the
     comparison later).
     """
     nbytes = WORD_SIZE // BYTE_SIZE
-    assert len(data) >= nbytes
+    if len(data) < nbytes:
+        raise Catalog1Error('data must be at least of size {} bytes.'\
+                .format(nbytes))
 
     res_sign = []
 
@@ -82,3 +86,53 @@ def strong_hash(data):
     m = hashlib.sha256()
     m.update(data)
     return m.digest()
+
+########################################
+########################################
+
+# Binding the C library to python:
+import ctypes
+from ctypes import cdll
+
+CATALOG1_LIB = 'libcatalog1.so'
+
+# A class for calling the sign function from libcatalog1.
+class Catalog1Sign:
+    def __init__(self,lib_name=CATALOG1_LIB):
+        # Get the catalog1 sign function:
+        self._catalog1_lib = cdll.LoadLibrary(lib_name)
+        self._csign = self._catalog1_lib.sign
+        # Return value is an integer:
+        self._csign.restype = ctypes.c_int32
+
+
+    def sign(self,data,num_perms):
+        """
+        Sign data using <num_perms> permutations.
+        """
+        if len(data) < 4:
+            raise Catalog1Error('data must be at least of size 4 bytes.')
+
+        arr_perms = ctypes.c_uint32 * num_perms
+        # Initialize array for return value:
+        s = arr_perms()
+        print('len(data) =',len(data))
+        res = self._csign(data,len(data),s,num_perms)
+
+        if res != 0:
+            raise Catalog1Error(\
+                    'Error number: {} when calling sign()'.format(res))
+
+        return list(s)
+
+
+# Initialize one instance for this module:
+c1s = Catalog1Sign(CATALOG1_LIB)
+
+def sign(data,num_perms):
+    """
+    Sign over data.
+    Calls the sign function from libcatalog1.so
+    """
+    return c1s.sign(data,num_perms)
+
