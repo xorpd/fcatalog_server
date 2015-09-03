@@ -1,5 +1,6 @@
+import pytest
 
-from catalog1 import slow_sign,sign,strong_hash
+from catalog1 import slow_sign,sign,strong_hash,Catalog1Error
 
 def isdword(x):
     """
@@ -53,8 +54,10 @@ def test_sign_deterministic():
     """
     Make sure that signing the same data results in the same result
     """
-    res1 = sign(b'3kl4jfklsdjfklasjf8934j9sjdf9adfkalsdjflkasjdflkasdf',num_perms=20)
-    res2 = sign(b'3kl4jfklsdjfklasjf8934j9sjdf9adfkalsdjflkasjdflkasdf',num_perms=20)
+    res1 = sign(b'3kl4jfklsdjfklasjf8934j9sjdf9adfkalsdjflkasjdflkasdf',\
+            num_perms=20)
+    res2 = sign(b'3kl4jfklsdjfklasjf8934j9sjdf9adfkalsdjflkasjdflkasdf',\
+            num_perms=20)
     assert res1 == res2
 
 
@@ -121,12 +124,31 @@ def test_slow_matches_fast():
     Make sure that the two implementations of catalog1 (The python and the C
     one) match.
     """
-    data = b'12345'
-    s1 = slow_sign(data,16)
-    s2 = sign(data,16)
-    assert s1 == s2
+    datas = []
+    datas.append(b'klsfjsalkdfjlksajfdlksaj340985390485ksldjflksdflksdjf')
+    datas.append(b'abc' * 205)
+    datas.append(b'349085092384590903485309485' * 300)
+    data = b'kslajflksajfaiosueroiqwuroiqwer9034851283904lkfjsalkfasdfsf'
+
+    for data in datas:
+        assert slow_sign(data,4) == sign(data,4)
 
 
 
+def test_short_input():
+    """
+    See what happens if sign or slow_sign are given a too short input (below 4
+    bytes).
+    """
+    # Should raise an error:
+    with pytest.raises(Catalog1Error):
+        sign(b'123',16)
 
+    # Should raise an error:
+    with pytest.raises(Catalog1Error):
+        slow_sign(b'123',16)
+
+    # Will not raise an error:
+    sign(b'1234',16)
+    slow_sign(b'1234',16)
 
