@@ -2,7 +2,6 @@
 #include <string.h>
 #include "catalog1.h"
 
-
 #define NUM_PERMS 16
 
 int print_dword_array(unsigned int* arr,unsigned int len) {
@@ -35,11 +34,8 @@ int test_simple_sign() {
     unsigned int result[NUM_PERMS];
     char* my_data = "hello world!";
 
-    printf("Testing simple signing of data:");
+    printf("\n* Testing simple signing of data:\n");
     sign(my_data,strlen(my_data),result,NUM_PERMS);
-    printf("Result:");
-    // Print the signed result:
-    print_dword_array(result,NUM_PERMS);
     return 0;
 }
 
@@ -53,11 +49,36 @@ int test_sign_similarity() {
     char letters1[] = "kldfgjlksdmklvcamsdkcjaslkfjalskdjfklasdmklsajflkas";
     char letters2[] = "kldfgjlksdmklvcatsdkcjaslkfjalskdjfklasdmklsajflkas";
 
+    unsigned int sims;
+
+    printf("\n* Testing similarity properties of catalog1:\n");
+
     sign(letters1,strlen(letters1),s1,NUM_PERMS);
     sign(letters2,strlen(letters2),s2,NUM_PERMS);
+    // Count similars:
+    sims = count_similars(s1,s2,NUM_PERMS);
+    if(sims < NUM_PERMS/2) {
+        printf("letters1 is not so similar to letters2.\n");
+        return -1;
+    }
+
+    sign(digits1,strlen(digits1),s1,NUM_PERMS);
+    sign(digits2,strlen(digits2),s2,NUM_PERMS);
+    sims = count_similars(s1,s2,NUM_PERMS);
+    if(sims < NUM_PERMS/2) {
+        printf("digits1 is not so similar to digits2.\n");
+        return -1;
+    }
+
+    sign(letters1,strlen(letters1),s1,NUM_PERMS);
+    sign(digits2,strlen(digits2),s2,NUM_PERMS);
+    sims = count_similars(s1,s2,NUM_PERMS);
+    if(sims > 0) {
+        printf("A similarity was found between letters1 and digits2\n");
+        return -1;
+    }
 
     return 0;
-
 }
 
 
@@ -69,7 +90,13 @@ int main() {
     res |= test_sign_similarity();
 
     if(0 == res) {
-        printf("All tests pass successfuly!");
+        printf("\n===========================\n");
+        printf("All tests passed successfuly!\n");
+        printf("===========================\n");
+    } else {
+        printf("\n@@@@@@@@@@@@@@@@@@@@@@@@\n");
+        printf("Some tests have failed!\n");
+        printf("@@@@@@@@@@@@@@@@@@@@@@@@\n");
     }
 
     return 0;
