@@ -251,3 +251,49 @@ class TestGetSimilars(unittest.TestCase):
         self.fdb_mem.close()
 
 
+def test_get_similars_few_similars(fdb_mem):
+    """
+    Check the situation of a few matching similar functions.
+    """
+    # Data of some functions:
+    f1 = b'ioewjfoi1wjeioj43ioj23io5j43io5joiasjfdiaosdjfaijdfooisdf'
+    f2 = b'ioewjfoi2wjeioj43ioj23io5j43io5joiasjfdiaosdjfaijdfooisdf'
+    f3 = b'ioewjfoi2wjei3j43ioj23io5j43io5joiasjfdiaosdjfaijdfooisdf'
+    f4 = b'ioewjfoi2wjei3j43ioj23i45j43io5joiasjfdiaosdjfaijdfooisdf'
+    f5 = b'ioewjfoi1wjeioj43ioj23io5j43io5jasjfdiaosdjfaijdfooisdf'
+    f6 = b'ioewjfo1wCeioj43ioj23io5j43io5jasjfdiaosdjfaijdfooisdf'
+    # f7 is non related in its content to the ther 6:
+    f7 = b'@#%!%!@#$!@#$$$$$$$$$$$$$$$$@#$@#$@#$@#$@#$@#$'
+
+    # Add a few similar functions:
+    fdb_mem.add_function('f1',f1,'f1')
+    fdb_mem.add_function('f2',f2,'f2')
+    fdb_mem.add_function('f3',f3,'f3')
+    fdb_mem.add_function('f4',f4,'f4')
+    fdb_mem.add_function('f5',f5,'f5')
+    fdb_mem.add_function('f6',f6,'f6')
+    fdb_mem.add_function('f7',f7,'f7')
+
+
+    # Search with function 1's data:
+    res = fdb_mem.get_similars(f1,10)
+    # f1 to f6 should match somehow:
+    assert len(res) == 6
+    assert res[0].func_name == 'f1'
+
+    def get_dist(i):
+        return num_matches(res[i].func_sig,sign(f1,NUM_HASHES))
+
+    dists = [get_dist(i) for i in range(len(res))]
+    # Assert that dists is sorted (monotonically nonincreasing):
+    assert all(dists[i] >= dists[i+1] for i in range(len(dists)-1))
+
+    # The next result should be less relevant:
+    assert get_dist(1) < NUM_HASHES
+
+    # Search with function 7's data:
+    res = fdb_mem.get_similars(f7,10)
+    # Only f7 should match:
+    assert len(res) == 1
+    assert res[0].func_name == 'f7'
+
