@@ -13,8 +13,8 @@ def go():
     # Pick an initial seed, for determinisim.
     random.seed(a='A seed for determinism of this test.')
 
-    num_funcs = 0xf0
-    func_size = 0xf0
+    num_funcs = 64000
+    func_size = 0x200
     func_name_len = 0x20
 
 
