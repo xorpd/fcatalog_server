@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #define WORD_SIZE 32      	// 32 bits
 #define MAX_WORD 0xffffffff     // Maximum size of a dword.
 #define BYTE_SIZE 8             // Amount of bits in a byte.
@@ -48,7 +50,7 @@ int sign(
 
     // We need at least 4 bytes to generate a signature.
     // We return -1 (error) if we don't have at least 4 bytes.
-    if(len <= 4) {
+    if(len < 4) {
         return -1;
     }
     unsigned int y; // Current integer value of 4 consecutive bytes.
