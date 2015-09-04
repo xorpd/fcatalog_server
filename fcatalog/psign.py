@@ -24,7 +24,8 @@ def go():
     except FileNotFoundError:
         pass
 
-    # Build database in memory. Should be quicker.
+    # Build db:
+    print('Building db...')
     fdb = FuncsDB(DB_PATH,NUM_HASHES)
 
     num_funcs = 64000
@@ -32,6 +33,7 @@ def go():
     func_name_len = 0x20
 
 
+    print('Inserts...')
     # Add some functions:
     for i in range(num_funcs):
         # Generate function data:
@@ -40,6 +42,14 @@ def go():
         # s = sign(func_data,16)
         # Add the function to the DB:
         fdb.add_function('name',func_data,'comment')
+
+    fdb.commit_funcs()
+
+    print('Queries...')
+    # Perform some queries:
+    for i in range(10000):
+        func_data = rand_bytes(func_size)
+        fdb.get_similars(func_data,5)
 
     fdb.close()
 
