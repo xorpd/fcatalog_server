@@ -80,7 +80,9 @@ class FuncsDB:
             c.execute('COMMIT')
         except sqlite3.Error:
             c.execute('ROLLBACK')
-            c.execute('BEGIN TRANSACTION')
+
+        # Begin the next transaction:
+        c.execute('BEGIN TRANSACTION')
 
 
     def _build_empty_db(self):
