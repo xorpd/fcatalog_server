@@ -4,6 +4,11 @@ import collections
 
 from catalog1 import sign,strong_hash
 
+
+
+# Commit after this amount of functions inserted into the DB:
+FUNCTION_BATCH = 0x800
+
 class FuncsDBError(Exception):
     pass
 
@@ -18,18 +23,25 @@ class FuncsDB:
         self._db_path = db_path
         self._num_hashes = num_hashes
 
+        # Inserted functions waiting to be commited:
+        self._funcs_pending = 0
+
         # Check if the db has existed before:
         db_existed = False
         if os.path.isfile(db_path):
             db_existed = True
 
         # Open a connection to the database.
-        self._conn = sqlite3.connect(self._db_path)
+        self._conn = sqlite3.connect(self._db_path,isolation_level=None)
         self._is_open = True
-        
+
         # If the database file did not exist, we create an empty database:
         if not db_existed:
             self._build_empty_db()
+
+        # Begin transaction for inserts:
+        c = self._conn.cursor()
+        c.execute('BEGIN TRANSACTION')
         
 
     def _check_is_open(self):
@@ -42,11 +54,33 @@ class FuncsDB:
 
     def close(self):
         """
-        Close the connection to the database.
+        Commit and Close the connection to the database.
         """
         self._check_is_open()
+        # Set state to be closed:
+        self._is_open = False
+
+        c = self._conn.cursor()
+        try:
+            c.execute('COMMIT')
+        except sqlite3.Error as e:
+            c.execute('ROLLBACK')
         self._conn.close()
 
+
+    def commit_funcs(self):
+        """
+        Commit pending functions into the db, and prepare the next transaction.
+        """
+        self._check_is_open()
+        c = self._conn.cursor()
+        try:
+            # Zero the amount of pending functions:
+            self._funcs_pending = 0
+            c.execute('COMMIT')
+        except sqlite3.Error:
+            c.execute('ROLLBACK')
+            c.execute('BEGIN TRANSACTION')
 
 
     def _build_empty_db(self):
@@ -56,7 +90,6 @@ class FuncsDB:
         """
         self._check_is_open()
         c = self._conn.cursor()
-
         cmd_tbl = \
             """CREATE TABLE funcs(
                 func_hash BLOB PRIMARY KEY,
@@ -87,24 +120,34 @@ class FuncsDB:
         Add a (Reversed) function to the database.
         """
         self._check_is_open()
-        s = sign(func_data,self._num_hashes)
-        func_hash = strong_hash(func_data)
-
         c = self._conn.cursor()
+        try:
 
-        cmd_insert = \
-                """INSERT OR REPLACE into funcs 
-                    (func_hash,func_name,func_comment"""
+            s = sign(func_data,self._num_hashes)
+            func_hash = strong_hash(func_data)
 
-        for i in range(self._num_hashes):
-            cmd_insert += ',c' + str(i+1) + ' '
 
-        cmd_insert += ') values (?,?,?' + (',?' * self._num_hashes) + ');'
+            cmd_insert = \
+                    """INSERT OR REPLACE into funcs 
+                        (func_hash,func_name,func_comment"""
 
-        c.execute(cmd_insert,[\
-                sqlite3.Binary(func_hash),func_name,func_comment] + s)
+            for i in range(self._num_hashes):
+                cmd_insert += ',c' + str(i+1) + ' '
 
-        self._conn.commit()
+            cmd_insert += ') values (?,?,?' + (',?' * self._num_hashes) + ');'
+
+            c.execute(cmd_insert,[\
+                    sqlite3.Binary(func_hash),func_name,func_comment] + s)
+
+            # Commit functions inserted to the db if _funcs_pending is large
+            # enough:
+            if self._funcs_pending > FUNCTION_BATCH:
+                self.commit_funcs()
+
+        except sqlite3.Error:
+            # Give up previous transaction, and start a new one.
+            c.execute('ROLLBACK')
+            c.execute('BEGIN TRANSACTION')
 
 
     def get_similars(self,func_data,num_similars):
@@ -113,61 +156,69 @@ class FuncsDB:
         function. The list will be ordered by similarity. The first element is
         the most similar one.
         """
-        # A list to keep results:
-        res_list = []
-
         self._check_is_open()
-        s = sign(func_data,self._num_hashes)
-        func_hash = strong_hash(func_data)
-
         c = self._conn.cursor()
+        try:
+            # A list to keep results:
+            res_list = []
 
-        # Get all potential candidates for similarity:
-        lselects = ['SELECT * FROM funcs WHERE c' + str(i+1) + '=?' \
-                for i in range(self._num_hashes)]
-        # Also search for exact match (Using strong hash):
-        sel_hash = 'SELECT * FROM funcs WHERE func_hash=?'
-        lselects.append(sel_hash)
-        selects = "\nUNION\n".join(lselects)
+            s = sign(func_data,self._num_hashes)
+            func_hash = strong_hash(func_data)
 
-        # Find best matching rows
-        matching = 'SELECT func_hash,func_name,func_comment,'
 
-        sig_vals = ",".join(['c' + str(i+1) for i in range(self._num_hashes)])
-        matching += sig_vals
+            # Get all potential candidates for similarity:
+            lselects = ['SELECT * FROM funcs WHERE c' + str(i+1) + '=?' \
+                    for i in range(self._num_hashes)]
+            # Also search for exact match (Using strong hash):
+            sel_hash = 'SELECT * FROM funcs WHERE func_hash=?'
+            lselects.append(sel_hash)
+            selects = "\nUNION\n".join(lselects)
 
-        # Make an expression (c1=sig[0]) + (c2=sig[1]) + ...
-        # Which will be the grade of every row (The amount of matches of the
-        # signature).
-        sig_sum = ' + '.join(\
-                ['(c' + str(i+1) + '=?)' for i in range(self._num_hashes)])
-        matching += ',(' + sig_sum + ') AS grade '
+            # Find best matching rows
+            matching = 'SELECT func_hash,func_name,func_comment,'
 
-        matching += 'FROM (' + selects + ') '
+            sig_vals = ",".join(['c' + str(i+1) for i in range(self._num_hashes)])
+            matching += sig_vals
 
-        # Find the num_similars rows with highest grade:
-        matching += 'ORDER BY grade DESC LIMIT ?'
+            # Make an expression (c1=sig[0]) + (c2=sig[1]) + ...
+            # Which will be the grade of every row (The amount of matches of the
+            # signature).
+            sig_sum = ' + '.join(\
+                    ['(c' + str(i+1) + '=?)' for i in range(self._num_hashes)])
+            matching += ',(' + sig_sum + ') AS grade '
 
-        c.execute(matching,s + s + [func_hash,num_similars])
+            matching += 'FROM (' + selects + ') '
 
-        for res in c.fetchall():
-            res_hash,res_name,res_comment = res[:3]
-            # We don't want to include the last superficial column grade, this
-            # is why we have -1 here:
-            res_sig = list(res[3:-1])
-            sres = DBSimilar(\
-                    func_hash=res_hash,\
-                    func_name=res_name,\
-                    func_comment=res_comment,\
-                    func_sig=res_sig)
+            # Find the num_similars rows with highest grade:
+            matching += 'ORDER BY grade DESC LIMIT ?'
 
-            # If we have exact match (Using strong hash), we move the result to
-            # the beginning of res_list. Otherwise, we just append to the end.
-            # The exact match will always be at the beginning.
-            if res_hash == func_hash:
-                res_list.insert(0,sres)
-            else:
-                res_list.append(sres)
+            c.execute(matching,s + s + [func_hash,num_similars])
 
-        return res_list
+            for res in c.fetchall():
+                res_hash,res_name,res_comment = res[:3]
+                # We don't want to include the last superficial column grade, this
+                # is why we have -1 here:
+                res_sig = list(res[3:-1])
+                sres = DBSimilar(\
+                        func_hash=res_hash,\
+                        func_name=res_name,\
+                        func_comment=res_comment,\
+                        func_sig=res_sig)
+
+                # If we have exact match (Using strong hash), we move the result to
+                # the beginning of res_list. Otherwise, we just append to the end.
+                # The exact match will always be at the beginning.
+                if res_hash == func_hash:
+                    res_list.insert(0,sres)
+                else:
+                    res_list.append(sres)
+
+            return res_list
+
+        except sqlite3.Error:
+            # Give up previous transaction, and start a new one.
+            c.execute('ROLLBACK')
+            c.execute('BEGIN TRANSACTION')
+
+
 
