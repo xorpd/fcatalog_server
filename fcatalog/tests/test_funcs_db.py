@@ -3,6 +3,9 @@ import pytest
 import sqlite3
 import random
 import string
+import tempfile
+import os
+import shutil
 
 from funcs_db import FuncsDB
 from catalog1 import sign,strong_hash
@@ -29,7 +32,7 @@ class DebugFuncsDB(FuncsDB):
 @pytest.fixture(scope='function')
 def fdb_mem(request):
     """
-    Create a FuncsDB instance (A new database on disk).
+    Create a FuncsDB instance in memory.
     """
     # Build database in memory. Should be quicker.
     fdb = DebugFuncsDB(':memory:',NUM_HASHES)
@@ -38,6 +41,26 @@ def fdb_mem(request):
         """Finalizer for fdb"""
         # Make sure to close fdb.
         fdb.close()
+
+    request.addfinalizer(fin)
+    return fdb
+
+@pytest.fixture(scope='function')
+def fdb(request):
+    """
+    Create a FuncsDB instance on disk.
+    """
+    tmpdir = tempfile.mkdtemp()
+    db_path = os.path.join(tmpdir,'my_temp_db.db')
+    # Build database in memory. Should be quicker.
+    fdb = DebugFuncsDB(db_path,NUM_HASHES)
+
+    def fin():
+        """Finalizer for fdb"""
+        # Make sure to close fdb.
+        fdb.close()
+        # Remove temporary directory:
+        shutil.rmtree(tmpdir)
 
     request.addfinalizer(fin)
     return fdb
@@ -196,6 +219,12 @@ class TestGetSimilars(unittest.TestCase):
                 self.special_func_data = bytes(func_data)
                 self.special_func_name = func_name
                 self.special_func_comment = func_comment
+
+        # Commit functions to database.
+        # Maybe not really effective, as we are using a memory database.
+        # This statement was added here to check if commit_funcs works and
+        # doesn't raise an exception.
+        self.fdb_mem.commit_funcs()
 
 
     def test_match_random_func(self):
