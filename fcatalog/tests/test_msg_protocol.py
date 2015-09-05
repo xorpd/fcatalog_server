@@ -1,8 +1,35 @@
+import pytest
 import struct
 from fcatalog.proto.msg_protocol import Msg,MsgDef,Serializer,\
-        SerializeError,DeserializeError
+        SerializeError,DeserializeError,\
+        pack_msg_type,unpack_msg_type
 
+def test_msg_pack_unpack():
+    """
+    Make sure pack_msg_type and unpack_msg_type work correctly.
+    """
+    data = pack_msg_type(6,b'abcdefg')
+    msg_type, msg_data = unpack_msg_type(data)
+    assert msg_type == 6
+    assert msg_data == b'abcdefg'
+    
 
+def test_msg_pack_unpack_error():
+    """
+    Check handling of errors with pack_msg_type and unpack_msg_type
+    """
+    # We can't unpack data that is too short:
+    with pytest.raises(DeserializeError):
+        unpack_msg_type(b'12')
+    with pytest.raises(DeserializeError):
+        unpack_msg_type(b'123')
+
+    # This one doesn't raise an exception:
+    unpack_msg_type(b'1234')
+    with pytest.raises(DeserializeError):
+        unpack_msg_type(b'123')
+
+##################################################################
 
 class DummyMsg(MsgDef):
     afields = ['a_int','b_str']
@@ -15,9 +42,12 @@ class DummyMsg(MsgDef):
 
         # Write the integer as a dword.
         a_int = msg_inst.get_field('a_int')
+        if not isinstance(a_int,int):
+            raise SerializeError('a_int is not an integer!')
         # Assert the a_int is a dword:
         if not (0 <= a_int <= 0xffffffff):
             raise SerializeError('a_int is not a dword!')
+
 
         msg_data += struct.pack('I',a_int)
 
@@ -62,6 +92,8 @@ class OtherMsg(MsgDef):
 
         # Write the integer as a dword.
         c_int = msg_inst.get_field('c_int')
+        if not isinstance(c_int,int):
+            raise SerializeError('c_int is not an integer!')
         # Assert the a_int is a dword:
         if not (0 <= c_int <= 0xffffffff):
             raise SerializeError('c_int is not a dword!')
@@ -89,7 +121,7 @@ dummy_proto_def = {
 dummy_ser = Serializer(dummy_proto_def)
 
 
-def test_msg():
+def test_serialize_deserialize():
     """
     Serialize and deserialize a simple message, and make sure everything is
     correct.
@@ -114,4 +146,26 @@ def test_msg():
     assert other_msg.get_field('c_int') == other_msg2.get_field('c_int')
     data2 = dummy_ser.serialize_msg(other_msg2)
     assert data == data2
+
+
+def test_serialize_deserialize_error():
+    """
+    Check some serialize and deserialize errors.
+    """
+    other_msg = dummy_ser.get_msg('OtherMsg')
+    # I put bytes into c_int, instead of an integer:
+    other_msg.set_field('c_int',b'asklfjalskjfkalsjdf')
+    # We expect a SerializeError here:
+    with pytest.raises(SerializeError):
+        dummy_ser.serialize_msg(other_msg)
+
+    # We shouldn't be able to deserialize this data:
+    rand_data = b'askldfjlk3490f3490fsdfsdfkj'
+    with pytest.raises(DeserializeError):
+        dummy_ser.deserialize_msg(rand_data)
+
+
+
+
+
 
