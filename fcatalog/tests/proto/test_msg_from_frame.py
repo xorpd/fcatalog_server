@@ -171,3 +171,42 @@ def test_msg_from_frame_passing():
         
     run_timeout(transac_fin,loop=my_loop)
 
+
+def test_recv_invalid_msg():
+    """
+    Test receival of invalid message.
+    """
+    my_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(None)
+
+    ser = Serializer(proto_def)
+
+    class BadFrameEndpoint:
+        @asyncio.coroutine
+        def send(self,data_frame:bytes):
+            """Send a frame"""
+            return
+
+        @asyncio.coroutine
+        def recv(self) -> bytes:
+            """Receive a frame"""
+            return b'Invalid Message data'
+
+        @asyncio.coroutine
+        def close(self):
+            """Close the connection"""
+            return
+
+    @asyncio.coroutine
+    def my_cor():
+        frame_endpoint = BadFrameEndpoint()
+        mff = MsgFromFrame(ser,frame_endpoint)
+
+        # We expect to get None (Which means the connection is considered to be
+        # close) if the message is invalid.
+
+        assert (yield from mff.recv()) is None
+
+    run_timeout(my_cor(),loop=my_loop)
+
+
