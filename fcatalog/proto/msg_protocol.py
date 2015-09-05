@@ -176,14 +176,12 @@ class Serializer:
             if msg_type not in self._proto_def:
                 raise DeserializeError('Invalid message type {}.'.\
                         format(msg_type))
-
             msg_def = self._proto_def[msg_type]
             msg_inst = msg_def.deserialize(msg_data)
             return msg_inst
         except DeserializeError as e:
-            msg_name = self.msg_type_to_msg_name(msg_type)
-            raise DeserializeError('Failed deserializing msg {}'.\
-                    format(msg_name)) from e
+            raise DeserializeError('Failed deserializing msg:\n {}'.\
+                    format(msg_data)) from e
 
 
     def get_msg(self,msg_name):
