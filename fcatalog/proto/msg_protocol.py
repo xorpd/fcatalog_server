@@ -220,15 +220,35 @@ class MsgEndpoint:
 
 class MsgFromFrame(MsgEndpoint):
     def __init__(self,serializer,frame_endpoint):
-        raise NotImplementedError()
+        # Keep serializer:
+        self._serializer = serializer
+
+        # Keep frame_endpoint:
+        self._frame_endpoint = frame_endpoint
 
 
     @asyncio.coroutine
     def recv(self):
         """
         receive a message from the other side.
+        Return None if connection should be considered closed.
         """
-        raise NotImplementedError()
+        # Get a frame from the frame_endpoint:
+        frame = yield from self._frame_endpoint.recv()
+
+        # Check if the remote host has closed the connection:
+        if frame is None:
+            return None
+
+        try:
+            # Deserialize the frame into a message:
+            msg_inst = self._serializer.deserialize_msg(frame)
+        except DeserializeError:
+            # If we have an error reading the frame, we consider the
+            # connection as closed:
+            return None
+
+        return msg_inst
 
 
     @asyncio.coroutine
@@ -236,7 +256,9 @@ class MsgFromFrame(MsgEndpoint):
         """
         Send a message msg to the other side.
         """
-        raise NotImplementedError()
+        frame = self._serializer.serialize_msg(msg)
+        return ( yield from self._frame_endpoint.send(frame) )
+
 
     @asyncio.coroutine
     def close(self):
