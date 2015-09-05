@@ -65,8 +65,6 @@ class Msg:
 class MsgDef:
     # The allowed fields of the message:
     afields = []
-    def __init__(self):
-        pass
 
     def serialize(self,msg_inst) -> bytes:
         """
@@ -79,6 +77,8 @@ class MsgDef:
         Deserialize data bytes into a msg_inst.
         """
         raise NotImplementedError()
+
+
 
 
 
@@ -141,6 +141,7 @@ class Serializer:
         """
         return self._b_msg_type_name[:msg_name]
 
+
     def serialize_msg(msg_inst):
         """
         Serialize a message instance to bytes.
@@ -176,7 +177,7 @@ class Serializer:
                     format(msg_name)) from e
 
 
-    def get_msg(msg_name):
+    def get_msg(self,msg_name):
         """
         Get an empty message of name msg_name
         """
