@@ -2,7 +2,7 @@ import asyncio
 import struct
 import bidict
 
-class MsgProtocolError: pass
+class MsgProtocolError(Exception): pass
 class SerializeError(MsgProtocolError): pass
 class DeserializeError(MsgProtocolError): pass
 
@@ -34,14 +34,14 @@ class Msg:
         """
         Get the message type of the Msg
         """
-        return self._msg_type()
+        return self._msg_type
 
 
     def _check_field_exists(self,field):
         """
         Make sure that a field exists.
         """
-        if field not in self._afields
+        if field not in self._afields:
             raise MsgError('Msg {} does not have field {}.'.format(\
                     self.msg_name,field))
 
@@ -66,6 +66,10 @@ class MsgDef:
     # The allowed fields of the message:
     afields = []
 
+    def __init__(self,serializer):
+        # Keep serializer:
+        self._serializer = serializer
+
     def serialize(self,msg_inst) -> bytes:
         """
         Serialize a msg_inst into bytes.
@@ -78,8 +82,13 @@ class MsgDef:
         """
         raise NotImplementedError()
 
-
-
+    def get_msg(self):
+        """
+        Get an empty message of the type of this message.
+        """
+        # Get this class name:
+        class_name = type(self).__name__
+        return self._serializer.get_msg(class_name)
 
 
 ##################################################################
@@ -95,12 +104,9 @@ def unpack_msg_type(data:bytes):
         raise DeserializeError('Data is too short. len(data) ='
                 '{}'.format(len(data)))
 
-    try:
-        msg_type = struct.unpack("I",data[0:4])[0]
-        msg_data = data[4:]
-        return msg_type,msg_data
-    except Exception as e:
-        raise DeserializeError() from e
+    msg_type = struct.unpack("I",data[0:4])[0]
+    msg_data = data[4:]
+    return msg_type,msg_data
 
 
 def pack_msg_type(msg_type,msg_data:bytes):
@@ -108,26 +114,29 @@ def pack_msg_type(msg_type,msg_data:bytes):
     Given the msg type and the message data, build a full message (Made of
     bytes).
     """
-    try:
-        msg_type_data = struct.pack("I",data[0:4])
-        data = msg_type_data + msg_data
-        return data
-    except Exception as e:
-        raise SerializeError() from e
+    # try:
+    msg_type_data = struct.pack("I",msg_type)
+    data = msg_type_data + msg_data
+    return data
+    # except Exception as e:
+        # raise
+    #     raise SerializeError() from e
 
 ###################################################################
 
 
 class Serializer:
     def __init__(self,proto_def):
-        # Create a bidirectional dictionary from proto_def
-        self._proto_def = proto_def
-
+        # Dict between msg_type and MsgDef instance:
+        self._proto_def = dict()
         # Bidirectional dict between msg type and msg name: 
         self._b_msg_type_name = bidict.bidict()
-        for msg_type,msg_def in self._proto_def.items():
+        for msg_type, msg_def in proto_def.items():
+            # Initialize msg_def with serializer=self
+            msg_def_inst = msg_def(self)
+            self._proto_def[msg_type] = msg_def_inst
             # Assign the msg_def's instance name:
-            self._b_msg_type_name[msg_type] = type(msg_def).__name__
+            self._b_msg_type_name[msg_type] = type(msg_def_inst).__name__
 
     def msg_type_to_msg_name(self,msg_type):
         """
@@ -142,7 +151,7 @@ class Serializer:
         return self._b_msg_type_name[:msg_name]
 
 
-    def serialize_msg(msg_inst):
+    def serialize_msg(self,msg_inst):
         """
         Serialize a message instance to bytes.
         """
@@ -152,13 +161,13 @@ class Serializer:
             msg_def = self._proto_def[msg_type]
             msg_data = msg_def.serialize(msg_inst)
             return pack_msg_type(msg_type,msg_data)
-        except Exception as e:
+        except SerializeError as e:
             msg_name = self.msg_type_to_msg_name(msg_type)
-            raise SerializeError('Failed serializing msg {}.'.format(msg_name))\
-                    from e
+            raise SerializeError('Failed serializing msg {}.'.\
+                    format(msg_name)) from e
 
 
-    def deserialize_msg(data):
+    def deserialize_msg(self,data):
         """
         Deserialize data bytes to a message instance.
         """
@@ -171,7 +180,7 @@ class Serializer:
             msg_def = self._proto_def[msg_type]
             msg_inst = msg_def.deserialize(msg_data)
             return msg_inst
-        except Exception as e:
+        except DeserializeError as e:
             msg_name = self.msg_type_to_msg_name(msg_type)
             raise DeserializeError('Failed deserializing msg {}'.\
                     format(msg_name)) from e
@@ -181,7 +190,7 @@ class Serializer:
         """
         Get an empty message of name msg_name
         """
-        msg_type = self._msg_name_to_msg_type(msg_name)
+        msg_type = self.msg_name_to_msg_type(msg_name)
         msg_def = self._proto_def[msg_type]
 
         # Build an empty message of the correct type:
