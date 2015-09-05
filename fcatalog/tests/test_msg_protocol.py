@@ -81,6 +81,7 @@ class DummyMsg(MsgDef):
 
         return msg_inst
 
+
 class OtherMsg(MsgDef):
     afields = ['c_int']
 
@@ -165,7 +166,5 @@ def test_serialize_deserialize_error():
         dummy_ser.deserialize_msg(rand_data)
 
 
-
-
-
+####################################################################
 
