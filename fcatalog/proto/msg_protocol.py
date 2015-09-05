@@ -1,5 +1,6 @@
 import asyncio
 import struct
+import bidict
 
 class MsgProtocolError: pass
 class SerializeError(MsgProtocolError): pass
@@ -16,10 +17,25 @@ class Msg:
         # Keep the msg_type:
         self._msg_type = msg_type
         # Set of allowed fields:
-        self._afields = afields
+        self._afields = set(afields)
 
         # Values of fields:
         self._fields = {}
+
+    @property
+    def msg_name(self):
+        """
+        Get the message name of the Msg.
+        """
+        return self._serializer.msg_type_to_msg_name(self._msg_type)
+
+    @property
+    def msg_type(self):
+        """
+        Get the message type of the Msg
+        """
+        return self._msg_type()
+
 
     def _check_field_exists(self,field):
         """
@@ -27,8 +43,7 @@ class Msg:
         """
         if field not in self._afields
             raise MsgError('Msg {} does not have field {}.'.format(\
-                    self._serializer.msg_name_by_msg_type(self._msg_type),\
-                    field))
+                    self.msg_name,field))
 
     def set_field(self,field,value):
         """
@@ -44,43 +59,30 @@ class Msg:
         self._check_field_exists(field)
         return self._fields[field]
 
+#######################################################
+
 
 class MsgDef:
     # The allowed fields of the message:
-    AFIELDS = []
+    afields = []
     def __init__(self):
         pass
 
     def serialize(self,msg_inst) -> bytes:
         """
-        Serialize an msg_inst into bytes.
+        Serialize a msg_inst into bytes.
         """
         raise NotImplementedError()
 
-    def deserialize(self,data:bytes):
+    def deserialize(self,msg_data:bytes):
         """
         Deserialize data bytes into a msg_inst.
         """
         raise NotImplementedError()
 
 
-class AddFunction(MsgDef):
-    pass
 
-class GetSimilars(MsgDef):
-    pass
-
-class ResultSimilars(MsgDef):
-    pass
-
-class ChooseDB(MsgDef):
-    pass
-
-
-proto_def = {\
-        0:AddFunction,\
-        1:GetSimilars,\
-        2:ChooseDB}
+##################################################################
 
 
 def unpack_msg_type(data:bytes):
@@ -113,20 +115,125 @@ def pack_msg_type(msg_type,msg_data:bytes):
     except Exception as e:
         raise SerializeError() from e
 
+###################################################################
+
 
 class Serializer:
     def __init__(self,proto_def):
-        raise NotImplementedError()
+        # Create a bidirectional dictionary from proto_def
+        self._proto_def = proto_def
 
-    def msg_name_by_msg_type(self,msg_type):
+        # Bidirectional dict between msg type and msg name: 
+        self._b_msg_type_name = bidict.bidict()
+        for msg_type,msg_def in self._proto_def.items():
+            # Assign the msg_def's instance name:
+            self._b_msg_type_name[msg_type] = type(msg_def).__name__
+
+    def msg_type_to_msg_name(self,msg_type):
         """
         Convert message type (Integer) to message name (string).
         """
+        return self._b_msg_type_name[msg_type:]
+
+    def msg_name_to_msg_type(self,msg_name):
+        """
+        Convert message name (string) to message type (Integer).
+        """
+        return self._b_msg_type_name[:msg_name]
+
+    def serialize_msg(msg_inst):
+        """
+        Serialize a message instance to bytes.
+        """
+        try:
+            # Get the relevant msg_def instance:
+            msg_type = msg_inst.msg_type
+            msg_def = self._proto_def[msg_type]
+            msg_data = msg_def.serialize(msg_inst)
+            return pack_msg_type(msg_type,msg_data)
+        except Exception as e:
+            msg_name = self.msg_type_to_msg_name(msg_type)
+            raise SerializeError('Failed serializing msg {}.'.format(msg_name))\
+                    from e
+
+
+    def deserialize_msg(data):
+        """
+        Deserialize data bytes to a message instance.
+        """
+        try:
+            msg_type, msg_data = unpack_msg_type(data)
+            if msg_type not in self._proto_def:
+                raise DeserializeError('Invalid message type {}.'.\
+                        format(msg_type))
+
+            msg_def = self._proto_def[msg_type]
+            msg_inst = msg_def.deserialize(msg_data)
+            return msg_inst
+        except Exception as e:
+            msg_name = self.msg_type_to_msg_name(msg_type)
+            raise DeserializeError('Failed deserializing msg {}'.\
+                    format(msg_name)) from e
+
+
+    def get_msg(msg_name):
+        """
+        Get an empty message of name msg_name
+        """
+        msg_type = self._msg_name_to_msg_type(msg_name)
+        msg_def = self._proto_def[msg_type]
+
+        # Build an empty message of the correct type:
+        msg_inst = Msg(self,msg_type,msg_def.afields)
+        return msg_inst
+
+
+#####################################################
+#####################################################
+
+
+class MsgEndpoint:
+    @asyncio.coroutine
+    def send(self,msg):
+        """Send a message"""
         raise NotImplementedError()
 
-    def serialize_msg(msg_type,obj):
+    @asyncio.coroutine
+    def recv(self):
+        """Receive a message"""
+        raise NotImplementedError()
+
+    @asyncio.coroutine
+    def close(self):
+        """Close the connection"""
         raise NotImplementedError()
 
 
 
+class MsgFromFrame(MsgEndpoint):
+    def __init__(self,serializer,frame_endpoint):
+        raise NotImplementedError()
 
+
+    @asyncio.coroutine
+    def recv(self):
+        """
+        receive a message from the other side.
+        """
+        raise NotImplementedError()
+
+
+    @asyncio.coroutine
+    def send(self,msg):
+        """
+        Send a message msg to the other side.
+        """
+        raise NotImplementedError()
+
+    @asyncio.coroutine
+    def close(self):
+        """
+        Close the connection
+        """
+        # Close the connection:
+        yield from self._frame_endpoint.close()
