@@ -2,8 +2,8 @@ import struct
 import asyncio
 import pytest
 
+from fcatalog.proto.frame_endpoint import TCPFrameEndpoint
 from fcatalog.tests.asyncio_util import run_timeout
-from fcatalog.proto.frame_endpoint_adapter import TCPFrameEndpoint
 
 
 def test_frame_endpoint_tcp_adapter_basic(tloop):
