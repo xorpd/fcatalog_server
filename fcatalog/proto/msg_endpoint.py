@@ -221,7 +221,7 @@ class MsgEndpoint:
 class MsgFromFrame(MsgEndpoint):
     def __init__(self,serializer,frame_endpoint):
         # Keep serializer:
-        self._serializer = serializer
+        self.serializer = serializer
 
         # Keep frame_endpoint:
         self._frame_endpoint = frame_endpoint
@@ -242,7 +242,7 @@ class MsgFromFrame(MsgEndpoint):
 
         try:
             # Deserialize the frame into a message:
-            msg_inst = self._serializer.deserialize_msg(frame)
+            msg_inst = self.serializer.deserialize_msg(frame)
         except DeserializeError:
             # If we have an error reading the frame, we consider the
             # connection as closed:
@@ -256,7 +256,7 @@ class MsgFromFrame(MsgEndpoint):
         """
         Send a message msg to the other side.
         """
-        frame = self._serializer.serialize_msg(msg)
+        frame = self.serializer.serialize_msg(msg)
         return ( yield from self._frame_endpoint.send(frame) )
 
 
