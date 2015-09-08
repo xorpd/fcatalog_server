@@ -1,7 +1,7 @@
 import collections
 from fcatalog.proto.serializer import s_string,d_string,\
         s_blob,d_blob,s_uint32,d_uint32,\
-        Serializer,ProtoDef
+        Serializer,ProtoDef,MsgDef
 
 
 # A similar function struct
@@ -14,9 +14,6 @@ class ChooseDB(MsgDef):
         """
         Serialize a msg_inst into bytes.
         """
-        # We should never really serialize this message. We only receive it.
-        raise NotImplementedError()
-
         return s_string(msg_inst.get_field('db_name'))
 
     def deserialize(self,msg_data:bytes):
@@ -35,13 +32,11 @@ class AddFunction(MsgDef):
         """
         Serialize a msg_inst into bytes.
         """
-        # We should never really serialize this message. We only receive it.
-        raise NotImplementedError()
         resl = []
-        res_l.append(s_string(msg_inst.get_field('func_name')))
-        res_l.append(s_string(msg_inst.get_field('func_comment')))
-        res_l.append(s_blob(msg_inst.get_field('func_data')))
-        return b''.join(res_l)
+        resl.append(s_string(msg_inst.get_field('func_name')))
+        resl.append(s_string(msg_inst.get_field('func_comment')))
+        resl.append(s_blob(msg_inst.get_field('func_data')))
+        return b''.join(resl)
 
     def deserialize(self,msg_data:bytes):
         """
@@ -66,9 +61,6 @@ class RequestSimilars(MsgDef):
         """
         Serialize a msg_inst into bytes.
         """
-        # We should never really serialize this message. We only receive it.
-        raise NotImplementedError()
-
         resl = []
         resl.append(s_blob(msg_inst.get_field('func_data')))
         resl.append(s_uint32(msg_inst.get_field('num_similars')))
@@ -94,10 +86,11 @@ class ResponseSimilars(MsgDef):
         """
         Serialize a msg_inst into bytes.
         """
+        sims = msg_inst.get_field('similars')
         resl = []
         resl.append(s_uint32(len(sims)))
         
-        for sim in msg_inst.get_field('similars'):
+        for sim in sims:
             resl.append(s_string(sim.name))
             resl.append(s_string(sim.comment))
             resl.append(s_uint32(sim.sim_grade))
@@ -109,9 +102,28 @@ class ResponseSimilars(MsgDef):
         """
         Deserialize data bytes into a msg_inst.
         """
-        # We should never really receive this message. We only send it.
-        raise DeserializeError()
+        # Read the amount of similars:
+        nl,num_sims = d_uint32(msg_data)
+        msg_data = msg_data[nl:]
 
+        sims = []
+        for _ in range(num_sims):
+            nl,sim_name = d_string(msg_data)
+            msg_data = msg_data[nl:]
+            nl,sim_comment = d_string(msg_data)
+            msg_data = msg_data[nl:]
+            nl,sim_grade = d_uint32(msg_data)
+            msg_data = msg_data[nl:]
+
+            sims.append(FSimilar(\
+                    name=sim_name,\
+                    comment=sim_comment,\
+                    sim_grade=sim_grade\
+                    ))
+
+        msg_inst = self.get_msg()
+        msg_inst.set_field('similars',sims)
+        return msg_inst
 
 
 class Catalog1ProtoDef(ProtoDef):
