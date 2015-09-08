@@ -39,10 +39,10 @@ class Catalog1ServerLogic:
         # Database name:
         db_name = msg_inst.get_field('db_name')
         # Conclude database path:
-        db_path = os.path.join(db_base_path,db_name)
+        db_path = os.path.join(self._db_base_path,db_name)
 
         # Build a Functions DB interface:
-        self._fdb = FuncsDB(db_path,num_hashes)
+        self._fdb = FuncsDB(db_path,self._num_hashes)
         try:
             msg_inst = ( yield from self._msg_endpoint.recv() )
             while msg_inst is not None:
@@ -62,14 +62,15 @@ class Catalog1ServerLogic:
                 # Receive the next message:
                 msg_inst = ( yield from self._msg_endpoint.recv() )
 
+
         finally:
             # We make sure to eventually close the fdb interface (To commit all
             # changes that might be pending).
-            fdb.close()
+            self._fdb.close()
 
 
     @asyncio.coroutine
-    def handle_add_function(self,msg_inst):
+    def _handle_add_function(self,msg_inst):
         """
         Handle an AddFunction message.
         """
@@ -82,7 +83,7 @@ class Catalog1ServerLogic:
 
         
     @asyncio.coroutine
-    def handle_request_similars(self,msg_inst):
+    def _handle_request_similars(self,msg_inst):
         """
         Handle a RequestSimilars message.
         """
