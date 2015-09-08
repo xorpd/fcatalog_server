@@ -2,8 +2,8 @@
 
 import os
 import random
-from catalog1 import sign,strong_hash
-from funcs_db import FuncsDB
+from ..catalog1 import sign,strong_hash
+from ..funcs_db import FuncsDB
 
 DB_PATH = '/tmp/my_test_db.db'
 NUM_HASHES = 16
@@ -28,7 +28,7 @@ def go():
     print('Building db...')
     fdb = FuncsDB(DB_PATH,NUM_HASHES)
 
-    num_funcs = 64000
+    num_funcs = 640
     func_size = 0x200
     func_name_len = 0x20
 
@@ -47,7 +47,7 @@ def go():
 
     print('Queries...')
     # Perform some queries:
-    for i in range(10000):
+    for i in range(10):
         func_data = rand_bytes(func_size)
         fdb.get_similars(func_data,5)
 
