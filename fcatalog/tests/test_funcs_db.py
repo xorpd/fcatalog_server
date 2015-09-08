@@ -46,11 +46,26 @@ def fdb_mem(request):
     return fdb
 
 @pytest.fixture(scope='function')
-def fdb(request):
+def tmpdir(request):
+    """
+    A fixture to create a temporary directory.
+    Deletes the directory automatically after use.
+    """
+    tmpdir = tempfile.mkdtemp()
+    def fin():
+        """Finalizer for tmpdir"""
+        # Remove the temporary directory:
+        shutil.rmtree(tmpdir)
+    request.addfinalizer(fin)
+    return tmpdir
+
+
+@pytest.fixture(scope='function')
+def fdb(request,tmpdir):
     """
     Create a FuncsDB instance on disk.
     """
-    tmpdir = tempfile.mkdtemp()
+    # tmpdir = tempfile.mkdtemp()
     db_path = os.path.join(tmpdir,'my_temp_db.db')
     # Build database in memory. Should be quicker.
     fdb = DebugFuncsDB(db_path,NUM_HASHES)
@@ -60,7 +75,7 @@ def fdb(request):
         # Make sure to close fdb.
         fdb.close()
         # Remove temporary directory:
-        shutil.rmtree(tmpdir)
+        # shutil.rmtree(tmpdir)
 
     request.addfinalizer(fin)
     return fdb
