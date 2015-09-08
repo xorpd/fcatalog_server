@@ -36,7 +36,7 @@ class MsgFromFrame(MsgEndpoint):
         Return None if connection should be considered closed.
         """
         # Get a frame from the frame_endpoint:
-        frame = yield from self._frame_endpoint.recv()
+        frame = ( yield from self._frame_endpoint.recv() )
 
         # Check if the remote host has closed the connection:
         if frame is None:
