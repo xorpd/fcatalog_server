@@ -1,8 +1,9 @@
+import collections
 from fcatalog.proto.serializer import s_string,d_string,\
         s_blob,d_blob,s_uint32,d_uint32
 
 
-# A similar function:
+# A similar function struct
 FSimilar = collections.namedtuple('FSimilar',\
         ['name','comment','sim_grade'])
 
