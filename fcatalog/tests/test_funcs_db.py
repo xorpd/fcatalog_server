@@ -45,19 +45,6 @@ def fdb_mem(request):
     request.addfinalizer(fin)
     return fdb
 
-@pytest.fixture(scope='function')
-def tmpdir(request):
-    """
-    A fixture to create a temporary directory.
-    Deletes the directory automatically after use.
-    """
-    tmpdir = tempfile.mkdtemp()
-    def fin():
-        """Finalizer for tmpdir"""
-        # Remove the temporary directory:
-        shutil.rmtree(tmpdir)
-    request.addfinalizer(fin)
-    return tmpdir
 
 
 @pytest.fixture(scope='function')
