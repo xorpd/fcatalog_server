@@ -1,6 +1,6 @@
 import pytest
 import struct
-from fcatalog.proto.msg_endpoint import Msg,MsgDef,Serializer,\
+from fcatalog.proto.serializer import Msg,MsgDef,Serializer,\
         SerializeError,DeserializeError,\
         pack_msg_type,unpack_msg_type
 

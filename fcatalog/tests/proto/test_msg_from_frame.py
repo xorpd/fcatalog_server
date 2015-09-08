@@ -2,7 +2,8 @@ import pytest
 import asyncio
 import struct
 
-from fcatalog.proto.msg_endpoint import MsgFromFrame,Serializer,MsgDef
+from fcatalog.proto.serializer import Serializer,MsgDef
+from fcatalog.proto.msg_endpoint import MsgFromFrame
 
 from fcatalog.tests.asyncio_util import run_timeout,MockFrameEndpoint
 
