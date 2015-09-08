@@ -3,9 +3,7 @@ import pytest
 import sqlite3
 import random
 import string
-import tempfile
 import os
-import shutil
 
 from funcs_db import FuncsDB
 from catalog1 import sign,strong_hash
