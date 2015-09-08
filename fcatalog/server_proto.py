@@ -1,6 +1,7 @@
 import collections
 from fcatalog.proto.serializer import s_string,d_string,\
-        s_blob,d_blob,s_uint32,d_uint32
+        s_blob,d_blob,s_uint32,d_uint32,\
+        Serializer
 
 
 # A similar function struct
@@ -117,3 +118,6 @@ proto_def = {\
         1:AddFunction,\
         2:RequestSimilars,\
         3:ResponseSimilars}
+
+
+cser_serializer = Serializer(proto_def)
