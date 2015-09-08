@@ -42,9 +42,9 @@ class MockFrameEndpoint(FrameEndpoint):
     @asyncio.coroutine
     def close(self):
         """Close the connection"""
+        yield from self._frame_writer(None)
         if self._log_list is not None:
             # Write None. The other side will interpret this as closing the
             # connection:
-            yield from self._frame_writer(None)
             # Append 'stop' callback to the log list:
             self._log_list.append(('stop',self._uid))
