@@ -14,7 +14,7 @@ class FuncsDBError(Exception):
 
 
 DBSimilar = collections.namedtuple('DBSimilar',\
-        ['func_hash','func_name','func_comment','func_sig'])
+        ['func_hash','func_name','func_comment','func_sig','func_grade'])
 
 
 class FuncsDB:
@@ -201,11 +201,14 @@ class FuncsDB:
                 # We don't want to include the last superficial column grade, this
                 # is why we have -1 here:
                 res_sig = list(res[3:-1])
+                # The function's grade:
+                grade = res[-1]
                 sres = DBSimilar(\
                         func_hash=res_hash,\
                         func_name=res_name,\
                         func_comment=res_comment,\
-                        func_sig=res_sig)
+                        func_sig=res_sig,\
+                        func_grade=grade)
 
                 # If we have exact match (Using strong hash), we move the result to
                 # the beginning of res_list. Otherwise, we just append to the end.
