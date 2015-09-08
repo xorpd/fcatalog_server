@@ -2,7 +2,7 @@ import pytest
 import asyncio
 import struct
 
-from fcatalog.proto.serializer import Serializer,MsgDef
+from fcatalog.proto.serializer import Serializer,MsgDef,ProtoDef
 from fcatalog.proto.msg_endpoint import MsgFromFrame
 
 from fcatalog.tests.asyncio_util import run_timeout,MockFrameEndpoint
@@ -94,7 +94,12 @@ class Mess2(MsgDef):
         return msg_inst
 
 
-proto_def = {1:Mess1, 2:Mess2}
+class MyProtoDef(ProtoDef):
+    incoming_msgs = {0:Mess1, 1:Mess2}
+    outgoing_msgs = {0:Mess1, 1:Mess2}
+
+
+
 
 ########################################################################
 
@@ -107,7 +112,7 @@ def test_msg_from_frame_passing():
     asyncio.set_event_loop(None)
 
     # Build a serializer:
-    ser = Serializer(proto_def)
+    ser = Serializer(MyProtoDef)
 
     # Messages from player 1 to player 2
     q12 = asyncio.Queue(loop=my_loop)
@@ -180,7 +185,7 @@ def test_recv_invalid_msg():
     my_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(None)
 
-    ser = Serializer(proto_def)
+    ser = Serializer(MyProtoDef)
 
     class BadFrameEndpoint:
         @asyncio.coroutine
