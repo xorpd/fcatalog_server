@@ -1,5 +1,10 @@
-from fcatalog.proto.serializer import serialize_string,deserialize_string,\
-        serialize_uint32,deserialize_uint32
+from fcatalog.proto.serializer import s_string,d_string,\
+        s_blob,d_blob,s_uint32,d_uint32
+
+
+# A similar function:
+FSimilar = collections.namedtuple('FSimilar',\
+        ['name','comment','sim_grade'])
 
 class ChooseDB(MsgDef):
     afields = ['db_name']
@@ -7,14 +12,19 @@ class ChooseDB(MsgDef):
         """
         Serialize a msg_inst into bytes.
         """
-        return serialize_string(msg_inst.get_field('db_name'))
+        # We should never really serialize this message. We only receive it.
+        raise NotImplementedError()
+
+        return s_string(msg_inst.get_field('db_name'))
 
     def deserialize(self,msg_data:bytes):
         """
         Deserialize data bytes into a msg_inst.
         """
-        nextl,db_name = deserialize_string(msg_data)
-        return db_name
+        msg_inst = self.get_msg()
+        nextl,db_name = d_string(msg_data)
+        msg_inst.set_field('db_name',db_name)
+        return msg_inst
 
 
 class AddFunction(MsgDef):
@@ -23,18 +33,29 @@ class AddFunction(MsgDef):
         """
         Serialize a msg_inst into bytes.
         """
-        resl = []
-        res_l.append(serialize_string(msg_inst.get_field('func_name')))
-        res_l.append(serialize_string(msg_inst.get_field('func_comment')))
-
-
+        # We should never really serialize this message. We only receive it.
         raise NotImplementedError()
+        resl = []
+        res_l.append(s_string(msg_inst.get_field('func_name')))
+        res_l.append(s_string(msg_inst.get_field('func_comment')))
+        res_l.append(s_blob(msg_inst.get_field('func_data')))
+        return b''.join(res_l)
 
     def deserialize(self,msg_data:bytes):
         """
         Deserialize data bytes into a msg_inst.
         """
-        raise NotImplementedError()
+        nl,func_name = d_string(msg_data)
+        msg_data = msg_data[nl:]
+        nl,func_comment = d_string(msg_data)
+        msg_data = msg_data[nl:]
+        nl,func_data = d_blob(msg_data)
+
+        msg_inst = self.get_msg()
+        msg_inst.set_field('func_name',func_name)
+        msg_inst.set_field('func_comment',func_comment)
+        msg_inst.set_field('func_data',func_data)
+        return msg_inst
 
 
 class RequestSimilars(MsgDef):
@@ -43,13 +64,26 @@ class RequestSimilars(MsgDef):
         """
         Serialize a msg_inst into bytes.
         """
+        # We should never really serialize this message. We only receive it.
         raise NotImplementedError()
+
+        resl = []
+        resl.append(s_blob(msg_inst.get_field('func_data')))
+        resl.append(s_uint32(msg_inst.get_field('num_similars')))
+        return b''.join(resl)
 
     def deserialize(self,msg_data:bytes):
         """
         Deserialize data bytes into a msg_inst.
         """
-        raise NotImplementedError()
+        nl,func_data = d_blob(msg_data)
+        msg_data = msg_data[nl:]
+        nl,num_similars = d_uint32(msg_data)
+
+        msg_inst = self.get_msg()
+        msg_inst.set_field('func_data',func_data)
+        msg_inst.set_field('num_similars',num_similars)
+        return msg_inst
 
 
 class ResponseSimilars(MsgDef):
@@ -58,13 +92,23 @@ class ResponseSimilars(MsgDef):
         """
         Serialize a msg_inst into bytes.
         """
-        raise NotImplementedError()
+        resl = []
+        resl.append(s_uint32(len(sims)))
+        
+        for sim in msg_inst.get_field('similars'):
+            resl.append(s_string(sim.name))
+            resl.append(s_string(sim.comment))
+            resl.append(s_uint32(sim.sim_grade))
+
+        return b''.join(resl)
+
 
     def deserialize(self,msg_data:bytes):
         """
         Deserialize data bytes into a msg_inst.
         """
-        raise NotImplementedError()
+        # We should never really receive this message. We only send it.
+        raise DeserializeError()
 
 
 proto_def = {\
