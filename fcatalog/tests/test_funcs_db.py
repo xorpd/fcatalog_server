@@ -253,6 +253,7 @@ class TestGetSimilars(unittest.TestCase):
         assert sims[0].func_name == self.special_func_name
         assert sims[0].func_comment == self.special_func_comment
         assert sims[0].func_sig == sign(self.special_func_data,NUM_HASHES)
+        assert sims[0].func_grade == NUM_HASHES
 
 
     def test_match_like_special_func(self):
@@ -273,6 +274,7 @@ class TestGetSimilars(unittest.TestCase):
         assert sims[0].func_name == self.special_func_name
         assert sims[0].func_comment == self.special_func_comment
         assert sims[0].func_sig == sign(self.special_func_data,NUM_HASHES)
+        assert sims[0].func_grade < NUM_HASHES
 
 
     def tearDown(self):
