@@ -68,41 +68,41 @@ class Catalog1ServerLogic:
             fdb.close()
 
 
-@asyncio.coroutine
-def handle_add_function(self,msg_inst):
-    """
-    Handle an AddFunction message.
-    """
-    func_name = msg_inst.get_field('func_name')
-    func_comment = msg_inst.get_field('func_comment')
-    func_data = msg_inst.get_field('func_data')
+    @asyncio.coroutine
+    def handle_add_function(self,msg_inst):
+        """
+        Handle an AddFunction message.
+        """
+        func_name = msg_inst.get_field('func_name')
+        func_comment = msg_inst.get_field('func_comment')
+        func_data = msg_inst.get_field('func_data')
 
-    # Add function to database:
-    self._fdb.add_function(func_name,func_data,func_comment)
+        # Add function to database:
+        self._fdb.add_function(func_name,func_data,func_comment)
 
-    
-@asyncio.coroutine
-def handle_request_similars(self,msg_inst):
-    """
-    Handle a RequestSimilars message.
-    """
-    func_data = msg_inst.get_field('func_data')
-    num_similars = msg_inst.get_field('num_similars')
+        
+    @asyncio.coroutine
+    def handle_request_similars(self,msg_inst):
+        """
+        Handle a RequestSimilars message.
+        """
+        func_data = msg_inst.get_field('func_data')
+        num_similars = msg_inst.get_field('num_similars')
 
-    # Get a list of similar functions from the db:
-    sims = self._fdb.get_similars(func_data,num_similars)
-    # We convert the sims we have received from the db to another format:
-    res_sims = []
-    for s in sims:
-        fs = FSimilar(name=s.func_name,\
-                comment=s.func_comment,\
-                grade=s.func_grade)
-        res_sims.append(fs)
-    
-    # Build a ResponseSimilars message:
-    resp_msg = cser_serializer.get_msg('ResponseSimilars')
-    resp_msg.set_field('similars',res_sims)
+        # Get a list of similar functions from the db:
+        sims = self._fdb.get_similars(func_data,num_similars)
+        # We convert the sims we have received from the db to another format:
+        res_sims = []
+        for s in sims:
+            fs = FSimilar(name=s.func_name,\
+                    comment=s.func_comment,\
+                    grade=s.func_grade)
+            res_sims.append(fs)
+        
+        # Build a ResponseSimilars message:
+        resp_msg = cser_serializer.get_msg('ResponseSimilars')
+        resp_msg.set_field('similars',res_sims)
 
-    # Send back the Response similars message:
-    yield from self._msg_endpoint.send(resp_msg)
+        # Send back the Response similars message:
+        yield from self._msg_endpoint.send(resp_msg)
 
