@@ -2,7 +2,7 @@ import sqlite3
 import os
 import collections
 
-from .catalog1 import sign,strong_hash
+from catalog1 import sign,strong_hash
 
 
 
