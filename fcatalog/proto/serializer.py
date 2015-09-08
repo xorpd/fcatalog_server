@@ -2,11 +2,11 @@ import asyncio
 import struct
 import bidict
 
-class MsgProtocolError(Exception): pass
-class SerializeError(MsgProtocolError): pass
-class DeserializeError(MsgProtocolError): pass
+class SerializerError(Exception): pass
+class SerializeError(SerializerError): pass
+class DeserializeError(SerializerError): pass
 
-class MsgError(MsgProtocolError): pass
+class MsgError(SerializerError): pass
 
 
 # A message instance:
@@ -93,6 +93,13 @@ class MsgDef:
 
 ##################################################################
 
+class ProtoDef:
+    outgoing_msgs = {}
+    incoming_msgs = {}
+
+
+##################################################################
+
 
 def unpack_msg_type(data:bytes):
     """
@@ -114,24 +121,54 @@ def pack_msg_type(msg_type,msg_data:bytes):
     Given the msg type and the message data, build a full message (Made of
     bytes).
     """
-    # try:
     msg_type_data = struct.pack("I",msg_type)
     data = msg_type_data + msg_data
     return data
-    # except Exception as e:
-        # raise
-    #     raise SerializeError() from e
 
 ###################################################################
+
+def dicts_agree(dc1,dc2):
+    """
+    Check if two dictionaries agree on the intersection of their domains.
+    """
+    dom1 = set(dc1.keys())
+    dom2 = set(dc2.keys())
+
+    # Domain intersection:
+    int_dom = dom1.intersection(dom2)
+
+    # Make sure that the two dicts agree on all of their common domain:
+    for k in int_dom:
+        if dc1[k] != dc2[k]:
+            return False
+
+    return True
+
 
 
 class Serializer:
     def __init__(self,proto_def):
+        # Calculate intersection between keys of outgoing messages and incoming
+        # messages:
+        if not \
+            dicts_agree(proto_def.incoming_msgs,proto_def.outgoing_msgs):
+            raise SerializerError('Incompatible definitions of ' 
+                    'incoming and outgoing msgs: {}')
+
+        self._in_keys = proto_def.incoming_msgs.keys()
+        self._out_keys = proto_def.outgoing_msgs.keys()
+
+        # Collect a dictionary of all the messages:
+        all_msgs = {}
+        all_msgs.update(proto_def.incoming_msgs)
+        all_msgs.update(proto_def.outgoing_msgs)
+
+
         # Dict between msg_type and MsgDef instance:
         self._proto_def = dict()
         # Bidirectional dict between msg type and msg name: 
         self._b_msg_type_name = bidict.bidict()
-        for msg_type, msg_def in proto_def.items():
+        for msg_type, msg_def in all_msgs.items():
             # Initialize msg_def with serializer=self
             msg_def_inst = msg_def(self)
             self._proto_def[msg_type] = msg_def_inst
@@ -158,6 +195,10 @@ class Serializer:
         try:
             # Get the relevant msg_def instance:
             msg_type = msg_inst.msg_type
+            # Check if we are willing to send this kind of message:
+            if msg_type not in self._out_keys:
+                raise SerializeError('Message {} is not of type outgoing!'.\
+                        format(msg_type))
             msg_def = self._proto_def[msg_type]
             msg_data = msg_def.serialize(msg_inst)
             return pack_msg_type(msg_type,msg_data)
@@ -176,6 +217,13 @@ class Serializer:
             if msg_type not in self._proto_def:
                 raise DeserializeError('Invalid message type {}.'.\
                         format(msg_type))
+            
+            # Check if we are willing to receive this message type:
+            if msg_type not in self._in_keys:
+                raise DeserializeError('Message {} is not of type incoming!'.\
+                        format(msg_type))
+
+
             msg_def = self._proto_def[msg_type]
             msg_inst = msg_def.deserialize(msg_data)
             return msg_inst

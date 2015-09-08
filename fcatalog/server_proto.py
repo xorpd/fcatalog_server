@@ -1,7 +1,7 @@
 import collections
 from fcatalog.proto.serializer import s_string,d_string,\
         s_blob,d_blob,s_uint32,d_uint32,\
-        Serializer
+        Serializer,ProtoDef
 
 
 # A similar function struct
@@ -113,11 +113,18 @@ class ResponseSimilars(MsgDef):
         raise DeserializeError()
 
 
-proto_def = {\
+
+class Catalog1ProtoDef(ProtoDef):
+    incoming_msgs = {\
         0:ChooseDB,\
         1:AddFunction,\
-        2:RequestSimilars,\
-        3:ResponseSimilars}
+        2:RequestSimilars}
+    outgoing_msgs = {3:ResponseSimilars}
 
 
-cser_serializer = Serializer(proto_def)
+
+cser_serializer = Serializer(Catalog1ProtoDef)
+
+###############################################################
+###############################################################
+
