@@ -1,11 +1,11 @@
 import asyncio
 import os
 
-from .proto.msg_endpoint import MsgEndpoint
-from .server_proto import cser_serializer,FSimilar
-from .funcs_db import FuncsDB
+from fcatalog.proto.msg_endpoint import MsgEndpoint
+from fcatalog.server.catalog1_proto import cser_serializer,FSimilar
+from fcatalog.funcs_db import FuncsDB
 
-class ServerLogicError(Exception)
+class ServerLogicError(Exception): pass
 
 class Catalog1ServerLogic:
     def __init__(self,db_base_path,num_hashes,msg_endpoint):
