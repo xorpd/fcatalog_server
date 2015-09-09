@@ -1,0 +1,64 @@
+#! /usr/bin/env python3
+
+import sys
+import signal
+import asyncio
+import fcatalog.server_conf
+
+from fcatalog.server.fcatalog_logic import FCatalogServerLogic
+from fcatalog.server.fcatalog_proto import cser_serializer
+from fcatalog.proto.frame_endpoint import TCPFrameEndpoint
+from fcatalog.proto.msg_endpoint import MsgFromFrame
+
+
+@asyncio.coroutine
+def client_handler(reader,writer):
+    """
+    A coroutine for handling one client.
+    """
+    frame_endpoint = TCPFrameEndpoint(reader,writer)
+    msg_endpoint = MsgFromFrame(cser_serializer,frame_endpoint)
+    sl = FCatalogServerLogic(server_conf.DB_BASE_PATH,\
+            server_conf.NUM_HASHES,\
+            msg_endpoint)
+
+    # Handle one client:
+    yield from sl.client_handler()
+
+
+def start_server(host,port):
+    """
+    Start a fcatalog server on host <host> and port <port>.
+    """
+    loop = asyncio.get_event_loop()
+
+    coro = asyncio.start_server(client_handler,host=host,port=port,\
+            loop=loop,reuse_address=True)
+    server = loop.run_until_complete(coro)
+
+    def ask_exit(signame):
+        """
+        Exit properly after receiving a signal.
+        """
+        print('Received signal {}'.format(signame))
+        print('Sending signal to close server...')
+        server.close()
+
+    # Set loop handlers to SIGINT and SIGTERM:
+    for signame in ('SIGINT', 'SIGTERM'):
+            loop.add_signal_handler(getattr(signal, signame),
+                    lambda: ask_exit(signame))
+
+    print('FCatalog server is running on {}:{}'.format(host,port))
+
+    loop.run_until_complete(server.wait_closed())
+    loop.close()
+
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        print('Usage: {} local_host local_port'.format(sys.argv[0]))
+        sys.exit(2)
+
+    local_host = sys.argv[1]
+    local_port = int(sys.argv[2])
+    start_server(local_host,local_port)
