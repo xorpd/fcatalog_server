@@ -90,14 +90,16 @@ class Catalog1ServerLogic:
         func_data = msg_inst.get_field('func_data')
         num_similars = msg_inst.get_field('num_similars')
 
+
         # Get a list of similar functions from the db:
         sims = self._fdb.get_similars(func_data,num_similars)
+
         # We convert the sims we have received from the db to another format:
         res_sims = []
         for s in sims:
             fs = FSimilar(name=s.func_name,\
                     comment=s.func_comment,\
-                    grade=s.func_grade)
+                    sim_grade=s.func_grade)
             res_sims.append(fs)
         
         # Build a ResponseSimilars message:
