@@ -4,10 +4,10 @@ import os
 from fcatalog.proto.msg_endpoint import MsgFromFrame
 from fcatalog.tests.asyncio_util import run_timeout,MockFrameEndpoint
 
-from fcatalog.server.catalog1_logic import Catalog1ServerLogic
+from fcatalog.server.fcatalog_logic import FCatalogServerLogic
 
 
-from fcatalog.server.catalog1_proto import cser_serializer,\
+from fcatalog.server.fcatalog_proto import cser_serializer,\
         ChooseDB,AddFunction,RequestSimilars,ResponseSimilars,\
         FSimilar
 
@@ -45,7 +45,7 @@ def test_basic_catalog1_logic(tmpdir):
     # A future that marks the end of transaction
     # between player1 and player2:
     transac_fin = asyncio.Future(loop=my_loop)
-    sl = Catalog1ServerLogic(tmpdir,NUM_HASHES,mff1)
+    sl = FCatalogServerLogic(tmpdir,NUM_HASHES,mff1)
 
     server_task1 = asyncio.async(sl.client_handler(),loop=my_loop)
 
@@ -127,7 +127,7 @@ def test_basic_catalog1_logic(tmpdir):
 
     # A future that marks the end of transaction
     # between player1 and player2:
-    sl = Catalog1ServerLogic(tmpdir,NUM_HASHES,mff1)
+    sl = FCatalogServerLogic(tmpdir,NUM_HASHES,mff1)
     transac_fin = asyncio.Future(loop=my_loop)
     server_task2 = asyncio.async(sl.client_handler(),loop=my_loop)
 

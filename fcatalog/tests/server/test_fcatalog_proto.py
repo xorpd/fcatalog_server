@@ -1,4 +1,4 @@
-from fcatalog.server.catalog1_proto import \
+from fcatalog.server.fcatalog_proto import \
         ChooseDB,AddFunction,RequestSimilars,ResponseSimilars,\
         FSimilar
 
