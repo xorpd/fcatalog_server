@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 
 from fcatalog.proto.msg_endpoint import MsgEndpoint
@@ -6,6 +7,10 @@ from fcatalog.server.catalog1_proto import cser_serializer,FSimilar
 from fcatalog.funcs_db import FuncsDB
 
 class ServerLogicError(Exception): pass
+
+
+# Set up logger:
+logger = logging.getLogger(__name__)
 
 class Catalog1ServerLogic:
     def __init__(self,db_base_path,num_hashes,msg_endpoint):
@@ -26,6 +31,7 @@ class Catalog1ServerLogic:
         Communication with the client is done through the msg_endpoint class
         instance.
         """
+        logger.debug('New connection {}'.format(id(self._msg_endpoint)))
         msg_inst = ( yield from self._msg_endpoint.recv() )
 
         if msg_inst is None:
@@ -34,6 +40,9 @@ class Catalog1ServerLogic:
 
         if msg_inst.msg_name != 'ChooseDB':
             # If the first message is not ChooseDB, we disconnect.
+            logger.debug('Connection {} has {} as first message.'
+                    ' Closing connection.'.\
+                            format(msg_inst.msg_name, id(self._msg_endpoint)))
             return
 
         # Database name:
@@ -62,6 +71,8 @@ class Catalog1ServerLogic:
                 # Receive the next message:
                 msg_inst = ( yield from self._msg_endpoint.recv() )
 
+            logger.debug('Received a None message on connection {}'.\
+                    format(id(self._msg_endpoint)))
 
         finally:
             # We make sure to eventually close the fdb interface (To commit all
@@ -78,6 +89,12 @@ class Catalog1ServerLogic:
         func_comment = msg_inst.get_field('func_comment')
         func_data = msg_inst.get_field('func_data')
 
+        logger.debug('AddFunction: func_name={}'
+                ' func_comment={}'
+                ' func_data={} on connection {}'.\
+                        format(func_name,func_comment,func_data,\
+                        id(self._msg_endpoint)))
+
         # Add function to database:
         self._fdb.add_function(func_name,func_data,func_comment)
 
@@ -90,6 +107,10 @@ class Catalog1ServerLogic:
         func_data = msg_inst.get_field('func_data')
         num_similars = msg_inst.get_field('num_similars')
 
+        logger.debug('GetSimilars: func_data={}'
+                ' num_similars={} on connection {}'.\
+                        format(func_data,num_similars,\
+                        id(self._msg_endpoint)))
 
         # Get a list of similar functions from the db:
         sims = self._fdb.get_similars(func_data,num_similars)
