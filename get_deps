@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# A script to get the required dependencies for fcatalog server.
+# Run this script when you have internet connection, and python3 installed.
+# This script will fill the dep/ directory with all the required stuff for
+# offline installation.
+
+# Stop on any error:
+set -e
+
+###################################
+# Get Virtualenv script:
+###################################
+
+# Version of virtualenv:
+VERSION=13.1.2
+# Virtualenv tgz filename:
+VENV_TGZ=virtualenv-$VERSION.tar.gz
+VENV_DIR=virtualenv-$VERSION
+
+# Environment name:
+INITIAL_ENV=temp_env
+
+# Python3 interpreter:
+PYTHON=$(which python3)
+
+# URL of pypi to get virtualenv package:
+URL_BASE=https://pypi.python.org/packages/source/v/virtualenv
+
+printf "\nDownloading virtualenv:\n\n"
+
+# Download virtualenv:
+curl -O $URL_BASE/$VENV_TGZ
+
+# Create the dep directory:
+mkdir -p dep/
+
+cp $VENV_TGZ dep/
+# Open VENV_TGZ:
+tar xzf $VENV_TGZ
+# Create an initial virtual env:
+$PYTHON $VENV_DIR/virtualenv.py $INITIAL_ENV
+
+# The tgz file is not needed here anymore. We delete it:
+rm -rf $VENV_TGZ
+# The virtualenv directory is not needed here anymore:
+rm -rf $VENV_DIR
+
+####################################
+# Get required python packages:
+####################################
+
+printf "\nGetting required python packages:\n\n"
+
+mkdir -p dep/packages
+
+# Downloads packages (Requires pip installed):
+$INITIAL_ENV/bin/pip install --download dep/packages -r requirements.txt
+
+# Remove the temporary python environment:
+rm -rf $INITIAL_ENV
+
+set +e
