@@ -4,7 +4,7 @@ import os
 import sys
 import signal
 import asyncio
-import fcatalog.server_conf
+from fcatalog import server_conf
 
 from fcatalog.server.fcatalog_logic import FCatalogServerLogic
 from fcatalog.server.fcatalog_proto import cser_serializer
