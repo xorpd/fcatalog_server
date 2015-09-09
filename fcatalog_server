@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import os
 import sys
 import signal
 import asyncio
@@ -30,8 +31,11 @@ def start_server(host,port):
     """
     Start a fcatalog server on host <host> and port <port>.
     """
-    loop = asyncio.get_event_loop()
+    # Create the server_conf.DB_BASE_PATH if not existent:
+    if not os.path.exists(server_conf.DB_BASE_PATH):
+        os.makedirs(server_conf.DB_BASE_PATH)
 
+    loop = asyncio.get_event_loop()
     coro = asyncio.start_server(client_handler,host=host,port=port,\
             loop=loop,reuse_address=True)
     server = loop.run_until_complete(coro)
