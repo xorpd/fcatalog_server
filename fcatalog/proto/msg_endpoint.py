@@ -1,5 +1,5 @@
 import asyncio
-from fcatalog.proto.serializer import DeserializeError,SerializeError
+from .serializer import DeserializeError,SerializeError
 
 
 class MsgEndpoint:

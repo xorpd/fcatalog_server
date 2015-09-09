@@ -2,8 +2,7 @@ import sqlite3
 import os
 import collections
 
-from catalog1 import sign,strong_hash
-
+from fcatalog.catalog1 import sign,strong_hash
 
 
 # Commit after this amount of functions inserted into the DB:
