@@ -126,7 +126,7 @@ class ResponseSimilars(MsgDef):
         return msg_inst
 
 
-class Catalog1ProtoDef(ProtoDef):
+class FCatalogProtoDef(ProtoDef):
     incoming_msgs = {\
         0:ChooseDB,\
         1:AddFunction,\
@@ -135,7 +135,7 @@ class Catalog1ProtoDef(ProtoDef):
 
 
 
-cser_serializer = Serializer(Catalog1ProtoDef)
+cser_serializer = Serializer(FCatalogProtoDef)
 
 ###############################################################
 ###############################################################

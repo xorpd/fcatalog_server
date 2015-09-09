@@ -3,7 +3,7 @@ import logging
 import os
 
 from fcatalog.proto.msg_endpoint import MsgEndpoint
-from fcatalog.server.catalog1_proto import cser_serializer,FSimilar
+from fcatalog.server.fcatalog_proto import cser_serializer,FSimilar
 from fcatalog.funcs_db import FuncsDB
 
 class ServerLogicError(Exception): pass
@@ -12,7 +12,7 @@ class ServerLogicError(Exception): pass
 # Set up logger:
 logger = logging.getLogger(__name__)
 
-class Catalog1ServerLogic:
+class FCatalogServerLogic:
     def __init__(self,db_base_path,num_hashes,msg_endpoint):
         # Keep database base path:
         self._db_base_path = db_base_path
