@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# Stop on any error:
+set -e
+
+# Name of the new user to be added for use with the fcatalog server:
+USER_NAME="ufcatalog"
+
+cd catalog1
+echo "Uninstalling libcatalog1:"
+make uninstall
+
+# Remove the user $USER_NAME together with his home directory:
+userdel -rf $USER_NAME
+
+# Remove fcatalog.conf from the init:
+rm -rf /etc/init/fcatalog.conf
+
+set +e
