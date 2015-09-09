@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# Stop on any error:
+set -e
+
+# Make and make install catalog1.
+cd catalog1
+echo "Building libcatalog1:"
+make
+echo "Testing libcatalog1:"
+./bin/test_catalog1
+echo "Installing libcatalog1"
+make install
+
+# Add a new system user ufcatalog without a home dir.
+# See here: 
+# http://askubuntu.com/questions/29359/how-to-add-user-without-home
+useradd -r -s /bin/false ufcatalog
+
+# Create a directory for fcatalog databases:
+mkdir -p /var/lib/fcatalog
+# Make ufcatalog the owner of the directory:
+sudo chown -R ufcatalog:ufcatalog /var/lib/fcatalog
+
+# Install all python dependencies
+
+# install fcatalog python package.
+
+# Copy fcatalog_server to /usr/local/bin
+cp -f fcatalog_server /usr/local/bin/fcatalog_server
+
+# Copy assets/fcatalog.conf to /etc/init
+cp -f assets/fcatalog.conf /etc/init/fcatalog.conf
+
+set +e
