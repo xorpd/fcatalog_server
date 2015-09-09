@@ -3,6 +3,15 @@
 # Stop on any error:
 set -e
 
+# Name of the new user to be added for use with the fcatalog server:
+USER_NAME="ufcatalog"
+
+# Virtualenv environment name:
+ENV_NAME="${USER_NAME}_env"
+
+# Python3 interpreter:
+PYTHON=$(which python3)
+
 # Make and make install catalog1.
 cd catalog1
 echo "Building libcatalog1:"
@@ -12,22 +21,76 @@ echo "Testing libcatalog1:"
 echo "Installing libcatalog1"
 make install
 
-# Add a new system user ufcatalog without a home dir.
+cd ..
+
+##########################################
+# Add a new system user ufcatalog.
+##########################################
+
 # See here: 
 # http://askubuntu.com/questions/29359/how-to-add-user-without-home
-useradd -r -s /bin/false ufcatalog
+# Remove the user $USER_NAME together with his home directory:
+userdel -rf $USER_NAME
+useradd -s /bin/false -m -d /home/$USER_NAME $USER_NAME
 
 # Create a directory for fcatalog databases:
 mkdir -p /var/lib/fcatalog
 # Make ufcatalog the owner of the directory:
-sudo chown -R ufcatalog:ufcatalog /var/lib/fcatalog
+sudo chown -R $USER_NAME:$USER_NAME /var/lib/fcatalog
 
-# Install all python dependencies
+###########################################
+# Create a virtualenv at /home/${USER_NAME}
+###########################################
+
+# Keep the current path (Main tree):
+BASE_DIR=$PWD
+
+cd dep/
+
+# Get the name of the virtualenv tgz:
+VENV_TGZ=""
+for f in virtualenv*.tar.gz; do VENV_TGZ=$f; done
+
+# Get the filename without the extension. This gives the expected name of the
+# resulting directory:
+VENV_DIR="${VENV_TGZ%.}"
+
+# Open VENV_TGZ:
+tar xzf $VENV_TGZ
+
+cd /home/${USER_NAME}
+
+echo "Was here"
+# Create an initial virtual env at the home of ufcatalog
+sudo -u ufcatalog $PYTHON $VENV_DIR/virtualenv.py $ENV_NAME
+
+# Go back to dep/
+cd $BASE_DIR/dep
+
+# Remove the virtualenv dir. It is not needed anymore.
+rm -rf $VENV_DIR
+
+cd /home/${USER_NAME}
+
+# Make a bin directory:
+mkdir -p bin/
+
+#######################################################
+# Install all python dependencies inside the virtualenv
+#######################################################
+
+# Installs all python dependencies:
+$ENV_NAME/bin/pip install -r $BASE_DIR/requirements.txt \
+	$BASE_DIR/dep/packages --no-index \
+	--find-links $BASE_DIR/dep/packages 
+
 
 # install fcatalog python package.
+echo "TODO"
+
 
 # Copy fcatalog_server to /usr/local/bin
-cp -f fcatalog_server /usr/local/bin/fcatalog_server
+cp -f fcatalog_server /home/${USER_DIR}/bin/fcatalog_server
 
 # Copy assets/fcatalog.conf to /etc/init
 cp -f assets/fcatalog.conf /etc/init/fcatalog.conf
