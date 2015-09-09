@@ -53,7 +53,7 @@ printf "\nGetting required python packages:\n\n"
 
 mkdir -p dep/packages
 
-# Downloads packages (Requires pip installed):
+# Downloads packages
 $INITIAL_ENV/bin/pip install --download dep/packages -r requirements.txt
 
 # Remove the temporary python environment:
