@@ -120,6 +120,7 @@ int main() {
         printf("\n@@@@@@@@@@@@@@@@@@@@@@@@\n");
         printf("Some tests have failed!\n");
         printf("@@@@@@@@@@@@@@@@@@@@@@@@\n");
+        return -1;
     }
 
     return 0;
