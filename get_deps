@@ -41,7 +41,7 @@ tar xzf $VENV_TGZ
 rm -rf $INITIAL_ENV
 
 # Create an initial virtual env:
-$PYTHON $VENV_DIR/virtualenv.py $INITIAL_ENV
+$PYTHON $VENV_DIR/virtualenv.py -p $PYTHON $INITIAL_ENV
 
 # The tgz file is not needed here anymore. We delete it:
 rm -rf $VENV_TGZ
