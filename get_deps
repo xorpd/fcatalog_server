@@ -37,6 +37,9 @@ mkdir -p dep/
 cp $VENV_TGZ dep/
 # Open VENV_TGZ:
 tar xzf $VENV_TGZ
+# Remove virtual env if existent:
+rm -rf $INITIAL_ENV
+
 # Create an initial virtual env:
 $PYTHON $VENV_DIR/virtualenv.py $INITIAL_ENV
 
@@ -46,12 +49,37 @@ rm -rf $VENV_TGZ
 rm -rf $VENV_DIR
 
 ####################################
+# Create an fcatalog wheel:
+####################################
+printf  "\nCreating an fcatalog wheel\n\n"
+# Install wheel into pip.
+$INITIAL_ENV/bin/pip install wheel
+
+cd fcatalog
+
+# Remove dirs from a previous build, if existent:
+rm -rf build/
+rm -rf dist/
+rm -rf fcatalog.egg-info/
+
+
+# Create a wheel:
+../$INITIAL_ENV/bin/python setup.py bdist_wheel
+
+cd ..
+
+mkdir -p dep/packages
+
+# Copy the resulting wheel into dep:
+cp -R fcatalog/dist/*.whl dep/packages/
+
+
+####################################
 # Get required python packages:
 ####################################
 
 printf "\nGetting required python packages:\n\n"
 
-mkdir -p dep/packages
 
 # Downloads packages
 $INITIAL_ENV/bin/pip install --download dep/packages -r requirements.txt
