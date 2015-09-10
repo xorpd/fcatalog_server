@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# This script installs fcatalog_server. The installation requires root
+# privileges.
+# Note that you have to run get_deps first.
+
 # Stop on any error:
 set -e
 
