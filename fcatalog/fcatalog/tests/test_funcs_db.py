@@ -5,8 +5,8 @@ import random
 import string
 import os
 
-from funcs_db import FuncsDB
-from catalog1 import sign,strong_hash
+from fcatalog.funcs_db import FuncsDB
+from fcatalog.catalog1 import sign,strong_hash
 
 
 # Num hashes used for testing purposes:

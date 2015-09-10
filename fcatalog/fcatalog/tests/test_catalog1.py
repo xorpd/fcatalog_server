@@ -1,6 +1,6 @@
 import pytest
 
-from catalog1 import slow_sign,sign,strong_hash,Catalog1Error
+from fcatalog.catalog1 import slow_sign,sign,strong_hash,Catalog1Error
 
 def isdword(x):
     """
