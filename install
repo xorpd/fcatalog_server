@@ -16,26 +16,28 @@ PYTHON=$(which python3)
 cd catalog1
 echo "Building libcatalog1:"
 make
-echo "Testing libcatalog1:"
-./bin/test_catalog1
 echo "Installing libcatalog1"
 make install
+echo "Testing libcatalog1:"
+./bin/test_catalog1
 
 cd ..
 
 ##########################################
-# Add a new system user ufcatalog.
+# Add a new system user:
 ##########################################
 
 # See here: 
 # http://askubuntu.com/questions/29359/how-to-add-user-without-home
 # Remove the user $USER_NAME together with his home directory:
+set +e
 userdel -rf $USER_NAME
+set -e
 useradd -s /bin/false -m -d /home/$USER_NAME $USER_NAME
 
 # Create a directory for fcatalog databases:
 mkdir -p /var/lib/fcatalog
-# Make ufcatalog the owner of the directory:
+# Make $USER_NAME the owner of the directory:
 sudo chown -R $USER_NAME:$USER_NAME /var/lib/fcatalog
 
 ###########################################
@@ -53,46 +55,63 @@ for f in virtualenv*.tar.gz; do VENV_TGZ=$f; done
 
 # Get the filename without the extension. This gives the expected name of the
 # resulting directory:
-VENV_DIR="${VENV_TGZ%.}"
+VENV_DIR="${VENV_TGZ%*.tar.gz}"
+
+cp $VENV_TGZ /home/${USER_NAME}/$VENV_TGZ
+
+cd /home/${USER_NAME}
 
 # Open VENV_TGZ:
 tar xzf $VENV_TGZ
 
-cd /home/${USER_NAME}
-
-echo "Was here"
-# Create an initial virtual env at the home of ufcatalog
-sudo -u ufcatalog $PYTHON $VENV_DIR/virtualenv.py $ENV_NAME
+# Create an initial virtual env at the home of $USER_NAME
+sudo -u ${USER_NAME} $PYTHON $VENV_DIR/virtualenv.py $ENV_NAME
 
 # Go back to dep/
 cd $BASE_DIR/dep
 
-# Remove the virtualenv dir. It is not needed anymore.
+# Remove the virtualenv dir and tgz. They are not needed anymore:
 rm -rf $VENV_DIR
+rm -rf /home/${USER_NAME}/$VENV_TGZ
 
 cd /home/${USER_NAME}
 
 # Make a bin directory:
-mkdir -p bin/
+sudo -u ${USER_NAME} mkdir -p bin/
 
 #######################################################
 # Install all python dependencies inside the virtualenv
 #######################################################
 
+# Copy requirements.txt:
+cp $BASE_DIR/requirements.txt /home/${USER_NAME}/requirements.txt
+sudo chown -R $USER_NAME:$USER_NAME /home/${USER_NAME}/requirements.txt
+# Copy dependencies:
+cp -R $BASE_DIR/dep /home/${USER_NAME}/dep
+sudo chown -R $USER_NAME:$USER_NAME /home/${USER_NAME}/dep
+
+
+echo "Installing python dependencies:"
+pwd
+ls
 # Installs all python dependencies:
-$ENV_NAME/bin/pip install -r $BASE_DIR/requirements.txt \
-	$BASE_DIR/dep/packages --no-index \
-	--find-links $BASE_DIR/dep/packages 
+sudo -H -u ${USER_NAME} $ENV_NAME/bin/pip install \
+	-r /home/${USER_NAME}/requirements.txt \
+	--no-index \
+	--find-links /home/${USER_NAME}/dep/packages 
+
+# Dependencies and requirements.txt are no longer needed:
+rm -rf /home/${USER_NAME}/dep
+rm -rf /home/${USER_NAME}/requirements.txt
 
 
 # install fcatalog python package.
-echo "TODO"
+echo "Copy server binary to /home/${USER_NAME}/bin/fcatalog_server"
 
-
-# Copy fcatalog_server to /usr/local/bin
-cp -f fcatalog_server /home/${USER_DIR}/bin/fcatalog_server
+cp -f ${BASE_DIR}/fcatalog_server /home/${USER_NAME}/bin/fcatalog_server
+sudo chown -R $USER_NAME:$USER_NAME /home/${USER_NAME}/bin/fcatalog_server
 
 # Copy assets/fcatalog.conf to /etc/init
-cp -f assets/fcatalog.conf /etc/init/fcatalog.conf
+cp -f ${BASE_DIR}/assets/fcatalog.conf /etc/init/fcatalog.conf
 
 set +e
