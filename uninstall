@@ -3,6 +3,11 @@
 # Stop on any error:
 set -e
 
+# Stop the fcatalog server if it is currently running:
+set +e
+sudo stop fcatalog
+set -e
+
 # Name of the new user to be added for use with the fcatalog server:
 USER_NAME="ufcatalog"
 
