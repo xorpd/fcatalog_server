@@ -18,9 +18,9 @@ You can find the [fcatalog_client repository here](https://github.com/xorpd/fcat
 Requirements
 ------------
 
+- The server will only run on Linux. Tested on Ubuntu 14.04
 - Python >= 3.4
 - gcc
-
 
 Installation
 ------------
