@@ -10,6 +10,8 @@ pro.
 This was written to help binary reversers find similar functions, however it
 might be useful for other purposes as well.
 
+You can find the [fcatalog_client repository here](https://github.com/xorpd/fcatalog_client).
+
 Installation
 ------------
 
