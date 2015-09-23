@@ -12,7 +12,7 @@ from fcatalog.server.fcatalog_proto import cser_serializer
 from fcatalog.proto.frame_endpoint import TCPFrameEndpoint
 from fcatalog.proto.msg_endpoint import MsgFromFrame
 
-LOG_FILE_PATH = '/home/users/ufcatalog/log/fcatalog.log'
+LOG_FILE_PATH = '/home/ufcatalog/log/fcatalog.log'
 logging.basicConfig(filename=LOG_FILE_PATH,level=logging.DEBUG)
 
 @asyncio.coroutine
