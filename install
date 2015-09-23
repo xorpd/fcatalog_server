@@ -85,6 +85,9 @@ cd /home/${USER_NAME}
 # Make a bin directory:
 sudo -u ${USER_NAME} mkdir -p bin/
 
+# Make a log directory:
+sudo -u ${USER_NAME} mkdir -p log/
+
 #######################################################
 # Install all python dependencies inside the virtualenv
 #######################################################
