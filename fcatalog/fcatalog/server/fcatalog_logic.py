@@ -64,7 +64,6 @@ class FCatalogServerLogic:
 
         # Validate database name:
         if not is_good_db_name(db_name):
-            print('was here')
             logger.info('Invalid db name {} was chosen at connection {}'.\
                     format(db_name,id(self._msg_endpoint)))
             # Disconnect the client:
