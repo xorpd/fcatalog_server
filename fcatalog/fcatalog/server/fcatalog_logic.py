@@ -72,7 +72,8 @@ class FCatalogServerLogic:
         # Conclude database path:
         db_path = os.path.join(self._db_base_path,db_name)
 
-        logger.debug('db_path = {}'.format(db_path))
+        logger.debug('db_path = {} at connection {}'.\
+                format(db_path,id(self._msg_endpoint)))
 
         # Build a Functions DB interface:
         self._fdb = FuncsDB(db_path,self._num_hashes)
