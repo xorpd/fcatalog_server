@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import string
 
 from fcatalog.proto.msg_endpoint import MsgEndpoint
 from fcatalog.server.fcatalog_proto import cser_serializer,FSimilar
@@ -11,6 +12,19 @@ class ServerLogicError(Exception): pass
 
 # Set up logger:
 logger = logging.getLogger(__name__)
+
+def is_good_db_name(db_name):
+    """
+    Check if a db_name is valid. We have to be careful of directory traversal
+    here.
+    """
+    good_chars = string.ascii_letters + string.digits + "_"
+    for c in db_name:
+        if c not in good_chars:
+            return False
+
+    return True
+
 
 class FCatalogServerLogic:
     def __init__(self,db_base_path,num_hashes,msg_endpoint):
@@ -47,8 +61,19 @@ class FCatalogServerLogic:
 
         # Database name:
         db_name = msg_inst.get_field('db_name')
+
+        # Validate database name:
+        if not is_good_db_name(db_name):
+            print('was here')
+            logger.info('Invalid db name {} was chosen at connection {}'.\
+                    format(db_name,id(self._msg_endpoint)))
+            # Disconnect the client:
+            return
+
         # Conclude database path:
         db_path = os.path.join(self._db_base_path,db_name)
+
+        logger.debug('db_path = {}'.format(db_path))
 
         # Build a Functions DB interface:
         self._fdb = FuncsDB(db_path,self._num_hashes)
