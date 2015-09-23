@@ -13,7 +13,7 @@ from fcatalog.proto.frame_endpoint import TCPFrameEndpoint
 from fcatalog.proto.msg_endpoint import MsgFromFrame
 
 LOG_FILE_PATH = '/home/ufcatalog/log/fcatalog.log'
-logging.basicConfig(filename=LOG_FILE_PATH,level=logging.DEBUG)
+logging.basicConfig(filename=LOG_FILE_PATH,level=logging.INFO)
 
 @asyncio.coroutine
 def client_handler(reader,writer):
