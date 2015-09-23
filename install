@@ -77,7 +77,7 @@ sudo -u ${USER_NAME} $PYTHON $VENV_DIR/virtualenv.py -p $PYTHON $ENV_NAME
 cd $BASE_DIR/dep
 
 # Remove the virtualenv dir and tgz. They are not needed anymore:
-rm -rf $VENV_DIR
+rm -rf /home/${USER_NAME}/$VENV_DIR
 rm -rf /home/${USER_NAME}/$VENV_TGZ
 
 cd /home/${USER_NAME}
