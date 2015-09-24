@@ -14,6 +14,7 @@ The server is written using Python3 with Asyncio. Sqlite3 is used for
 persistency. The core catalog1 function is written in C, for speed.
 
 You can find the [fcatalog_client repository here](https://github.com/xorpd/fcatalog_client).
+Visit the [fcatalog website](http://fcatalog.xorpd.net) for the full story.
 
 Requirements
 ------------
