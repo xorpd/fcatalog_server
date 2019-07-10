@@ -34,6 +34,7 @@ unsigned int perm(unsigned int num, unsigned int x) {
         ror_index = (x ^ RAND_DWORDS[(i + num + 1) & NUM_DWORDS_MASK]) & 0x1f;
         x = ror(x,ror_index);
     }
+    return x;
 }
 
 int sign(
